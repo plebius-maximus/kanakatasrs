@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KanaKata</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;500&family=Zen+Kaku+Gothic+New:wght@300;400;500&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  /* ── Light mode (default) ── */
+  :root {
+    --bg:       #f5f0e8;
+    --bg2:      #ede7d9;
+    --surface:  #faf7f2;
+    --surface2: #ede7d9;
+    --border:   #d6ccbb;
+    --border2:  #c4b89f;
+    --text:     #2a2118;
+    --text2:    #4a3f30;
+    --muted:    #9a8e7a;
+    --accent:   #5b7fa6;
+    --accent2:  #4a6d91;
+    --correct:  #4a7c59;
+    --wrong:    #9e3a2f;
+    --gold:     #9a7230;
+    --shadow:   rgba(60,40,10,0.08);
+
+    /* group accent colours — muted, earthy */
+    --g1:#5b7fa6; --g2:#7a6aa0; --g3:#a05a52;
+    --g4:#4a7c59; --g5:#9a7230; --g6:#a07040;
+    --g7:#9a4e7a; --g8:#3a7a8a; --g9:#5a8a3a;
+
+    /* feedback tints */
+    --correct-bg: #eaf3ec;
+    --wrong-bg:   #f8ecea;
+  }
+
+  /* ── Dark mode ── */
+  html.dark {
+    --bg:       #1a1710;
+    --bg2:      #211e16;
+    --surface:  #242018;
+    --surface2: #2e2a20;
+    --border:   #3a3528;
+    --border2:  #4a4535;
+    --text:     #e8e0d0;
+    --text2:    #c8bfa8;
+    --muted:    #706858;
+    --accent:   #7a9fc0;
+    --accent2:  #92b4d0;
+    --correct:  #6aaa7a;
+    --wrong:    #c0605a;
+    --gold:     #c09040;
+    --shadow:   rgba(0,0,0,0.3);
+
+    --correct-bg: #1e2e20;
+    --wrong-bg:   #2e1e1c;
+  }
+
+  * { box-sizing:border-box; margin:0; padding:0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* Subtle paper grain in light mode */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+  html.dark body::before { opacity: 0.06; }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 820px;
+    padding: 24px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .logo {
+    font-family: 'IM Fell English', serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--text);
+  }
+  .logo-kana {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 1.5rem;
+    color: var(--accent);
+    font-weight: 300;
+  }
+  .logo-dot { color: var(--muted); font-style: italic; }
+
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .stats-bar { display:flex; gap:16px; font-size:0.72rem; color:var(--muted); }
+  .stat strong { color:var(--text2); font-weight:500; }
+
+  /* Nav tabs */
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .nav-tab {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px var(--shadow); }
+  .nav-tab:hover:not(.active) { color: var(--text2); }
+
+  /* Theme toggle */
+  .theme-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 9px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    line-height: 1;
+    transition: background 0.15s, border-color 0.15s;
+    color: var(--text2);
+  }
+  .theme-toggle:hover { border-color: var(--accent); }
+
+  /* Reset */
+  .reset-btn {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 0.68rem;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .reset-btn:hover { color: var(--wrong); border-color: var(--wrong); }
+  .reset-btn.confirm { color: var(--wrong); border-color: var(--wrong); background: var(--wrong-bg); }
+
+  /* ── Main ── */
+  main { width:100%; max-width:820px; padding:28px 24px; flex:1; display:flex; flex-direction:column; gap:24px; position:relative; z-index:1; }
+  .view { display:none; flex-direction:column; gap:24px; }
+  .view.active { display:flex; }
+
+  /* ── Shared card shell ── */
+  .card-wrap { width:100%; max-width:440px; margin:0 auto; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 44px 32px 32px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 2px 12px var(--shadow);
+  }
+  .card.correct-flash { border-color: var(--correct); box-shadow: 0 0 0 3px color-mix(in srgb, var(--correct) 15%, transparent), 0 2px 12px var(--shadow); }
+  .card.wrong-flash   { border-color: var(--wrong);   box-shadow: 0 0 0 3px color-mix(in srgb, var(--wrong) 15%, transparent),   0 2px 12px var(--shadow); }
+
+  .card-direction { position:absolute; top:14px; left:18px; font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+  .card-level { position:absolute; top:14px; right:18px; font-size:0.6rem; color:var(--muted); }
+  .card-level-dots { display:flex; gap:4px; margin-top:3px; justify-content:flex-end; }
+  .level-dot { width:5px; height:5px; border-radius:50%; background:var(--border2); }
+  .level-dot.filled { background:var(--accent); }
+
+  .card-main {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 5.5rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s;
+    letter-spacing: -0.02em;
+  }
+  .card-main.romaji-prompt {
+    font-family: 'IM Fell English', serif;
+    font-size: 3rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    font-style: italic;
+    color: var(--text2);
+  }
+  .card-main.combo { font-size: 3.8rem; letter-spacing: -0.03em; }
+  .card-main:active { transform: scale(0.96); }
+  .card-romaji-label {
+    font-family: 'IM Fell English', serif;
+    font-size: 1.5rem;
+    font-style: italic;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+  .sound-hint { font-size:0.65rem; color:var(--muted); display:flex; align-items:center; gap:5px; cursor:pointer; margin-top:2px; }
+  .sound-hint:hover { color:var(--accent); }
+
+  /* ── Answer area ── */
+  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .answer-prompt { font-size:0.68rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+  .answer-row { display:flex; gap:8px; width:100%; }
+
+  input#answer, input#quiz-answer {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    color: var(--text);
+    font-family: 'IM Fell English', serif;
+    font-size: 1.15rem;
+    font-style: italic;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.04em;
+    box-shadow: inset 0 1px 3px var(--shadow);
+  }
+  input#answer::placeholder, input#quiz-answer::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+    font-style: italic;
+  }
+  input#answer:focus, input#quiz-answer:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent), inset 0 1px 3px var(--shadow);
+  }
+  input#answer.correct, input#quiz-answer.correct { border-color:var(--correct); background:var(--correct-bg); }
+  input#answer.wrong,   input#quiz-answer.wrong   { border-color:var(--wrong);   background:var(--wrong-bg); }
+
+  button#submit-btn, button#quiz-submit-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 12px 20px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  button#submit-btn:hover, button#quiz-submit-btn:hover { background: var(--accent2); }
+  button#submit-btn:active, button#quiz-submit-btn:active { transform: scale(0.97); }
+
+  /* MC grid */
+  .mc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
+  .mc-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 11px;
+    color: var(--text);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 2.2rem;
+    font-weight: 300;
+    padding: 16px 10px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s, transform 0.1s, box-shadow 0.12s;
+    text-align: center;
+    line-height: 1;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+  .mc-btn:hover:not(:disabled) { background:var(--bg2); border-color:var(--accent); box-shadow:0 2px 8px var(--shadow); }
+  .mc-btn:active:not(:disabled) { transform:scale(0.97); }
+  .mc-btn.combo-opt { font-size:1.5rem; }
+  .mc-btn.mc-correct { border-color:var(--correct); background:var(--correct-bg); color:var(--correct); }
+  .mc-btn.mc-wrong   { border-color:var(--wrong);   background:var(--wrong-bg);   color:var(--wrong); }
+  .mc-btn.mc-reveal  { border-color:var(--correct); background:var(--correct-bg); color:var(--correct); opacity:0.6; }
+  .mc-btn:disabled { cursor:default; }
+
+  .feedback { min-height:32px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:400; font-style:italic; font-family:'IM Fell English',serif; }
+  .feedback.hidden { opacity:0; pointer-events:none; }
+  .feedback.correct { color:var(--correct); }
+  .feedback.wrong   { color:var(--wrong); }
+
+  /* ── Groups mini-grid ── */
+  .groups-grid { display:grid; grid-template-columns:repeat(9,1fr); gap:7px; }
+  .group-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 5px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px var(--shadow);
+  }
+  .group-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:var(--group-color,var(--muted)); opacity:0.5; }
+  .group-card.unlocked::before { opacity:1; }
+  .group-card.locked { opacity:0.35; }
+  .group-label { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.6rem; font-weight:500; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .group-card.unlocked .group-label { color:var(--group-color,var(--text2)); }
+  .group-chars { font-family:'Noto Serif JP',sans-serif; font-size:0.8rem; font-weight:300; color:var(--muted); margin-top:3px; }
+  .group-card.unlocked .group-chars { color:var(--text2); }
+  .group-progress-bar { height:2px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden; }
+  .group-progress-fill { height:100%; background:var(--group-color,var(--muted)); border-radius:2px; transition:width 0.4s; }
+  .group-count { font-size:0.6rem; color:var(--muted); margin-top:5px; }
+  .due-badge { display:inline-block; background:var(--accent); color:#fff; font-size:0.55rem; font-weight:500; padding:1px 4px; border-radius:4px; margin-left:3px; vertical-align:middle; }
+  .new-badge { background:var(--correct); }
+
+  /* ── Queue info ── */
+  .queue-info { font-size:0.68rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; text-align:center; }
+  .queue-info span { color:var(--text2); font-weight:500; }
+
+  /* ── Empty states ── */
+  .empty-state { text-align:center; padding:50px 20px; color:var(--muted); display:none; flex-direction:column; align-items:center; gap:12px; }
+  .empty-state.visible { display:flex; }
+  .empty-kana { font-family:'Noto Serif JP',serif; font-size:3rem; font-weight:300; opacity:0.2; }
+  .empty-title { font-family:'IM Fell English',serif; font-size:1.1rem; color:var(--text2); }
+  .empty-sub { font-size:0.78rem; line-height:1.7; }
+  .next-due-label { font-size:0.7rem; color:var(--accent); font-style:italic; }
+  .goto-learn-btn { margin-top:6px; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 22px; font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.8rem; font-weight:500; letter-spacing:0.05em; cursor:pointer; transition:background 0.15s; }
+  .goto-learn-btn:hover { background:var(--accent2); }
+
+  /* ── Unlock banner ── */
+  .unlock-banner { background:var(--surface); border:1px solid var(--correct); border-radius:12px; padding:12px 18px; align-items:center; gap:12px; font-size:0.78rem; color:var(--correct); display:none; box-shadow:0 2px 8px var(--shadow); }
+  .unlock-banner.visible { display:flex; }
+
+  /* ══ LEARN VIEW ══ */
+  .learn-setup { display:flex; flex-direction:column; gap:20px; }
+  .learn-header h2 { font-family:'IM Fell English',serif; font-size:1.5rem; font-weight:400; margin-bottom:6px; }
+  .learn-header p { font-size:0.78rem; color:var(--muted); line-height:1.7; }
+  .learn-available { font-size:0.76rem; color:var(--accent); margin-top:4px; font-style:italic; }
+
+  .batch-picker { display:flex; gap:10px; }
+  .batch-btn {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: 'IM Fell English', serif;
+    font-size: 1.5rem;
+    padding: 16px 10px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    text-align: center;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+  .batch-btn:hover { border-color:var(--accent); color:var(--text); }
+  .batch-btn.selected { border-color:var(--accent); background:var(--surface2); color:var(--accent); }
+  .batch-btn.disabled-opt { opacity:0.3; pointer-events:none; }
+
+  .start-learn-btn { background:var(--accent); color:#fff; border:none; border-radius:10px; padding:14px; font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.88rem; font-weight:500; letter-spacing:0.06em; cursor:pointer; transition:background 0.15s; }
+  .start-learn-btn:hover { background:var(--accent2); }
+  .start-learn-btn:disabled { opacity:0.4; pointer-events:none; }
+
+  .learn-progress-bar { height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .learn-progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.35s; }
+  .learn-counter { font-size:0.68rem; color:var(--muted); }
+
+  .results-screen { display:flex; flex-direction:column; align-items:center; gap:18px; text-align:center; padding:20px 0; }
+  .results-score { font-family:'IM Fell English',serif; font-size:4rem; font-weight:400; color:var(--correct); line-height:1; }
+  .results-score.bad { color:var(--wrong); }
+  .results-score.ok  { color:var(--gold); }
+  .results-title { font-family:'IM Fell English',serif; font-size:1.2rem; font-style:italic; }
+  .results-sub { font-size:0.78rem; color:var(--muted); line-height:1.7; }
+  .results-chars { font-family:'Noto Serif JP',serif; font-size:1.6rem; font-weight:300; letter-spacing:0.1em; color:var(--text2); }
+  .results-btn-row { display:flex; gap:10px; margin-top:6px; }
+  .results-btn { border-radius:9px; padding:11px 22px; font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.82rem; font-weight:500; letter-spacing:0.05em; cursor:pointer; border:none; transition:background 0.15s; }
+  .results-btn.primary { background:var(--accent); color:#fff; }
+  .results-btn.primary:hover { background:var(--accent2); }
+  .results-btn.secondary { background:transparent; border:1.5px solid var(--border); color:var(--muted); }
+  .results-btn.secondary:hover { color:var(--text); border-color:var(--border2); }
+
+  /* ══ STUDY REF VIEW ══ */
+  .study-ref-controls { display:flex; justify-content:space-between; align-items:center; }
+  .study-ref-title { font-family:'IM Fell English',serif; font-size:1rem; color:var(--text2); }
+  .show-all-btn { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.68rem; color:var(--muted); background:transparent; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; transition:color 0.15s,border-color 0.15s; }
+  .show-all-btn:hover, .show-all-btn.active { color:var(--accent); border-color:var(--accent); }
+
+  .ref-group { margin-bottom:20px; }
+  .ref-group-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.65rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; }
+  .ref-group-title span { color:var(--group-color,var(--muted)); }
+  .ref-chars-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(68px,1fr)); gap:7px; }
+  .ref-char-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:10px 6px 8px; text-align:center; cursor:pointer; transition:border-color 0.15s,transform 0.1s,box-shadow 0.15s; box-shadow:0 1px 3px var(--shadow); }
+  .ref-char-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 10px var(--shadow); }
+  .ref-char-card.not-learned { opacity:0.2; pointer-events:none; }
+  .ref-kana { font-family:'Noto Serif JP',serif; font-size:1.8rem; font-weight:300; line-height:1; }
+  .ref-romaji { font-size:0.6rem; color:var(--muted); margin-top:4px; font-style:italic; font-family:'IM Fell English',serif; }
+  .ref-char-card:hover .ref-romaji { color:var(--accent); }
+
+  /* ══ STATS VIEW ══ */
+  .section-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.65rem; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .stat-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .stat-tile { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 12px; text-align:center; box-shadow:0 1px 4px var(--shadow); }
+  .stat-tile-value { font-family:'IM Fell English',serif; font-size:2rem; color:var(--text); line-height:1; }
+  .stat-tile-label { font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-top:5px; }
+  .stat-tile.accent-tile .stat-tile-value { color:var(--accent); }
+  .stat-tile.correct-tile .stat-tile-value { color:var(--correct); }
+  .stat-tile.gold-tile .stat-tile-value { color:var(--gold); }
+
+  .level-dist-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 18px 12px; box-shadow:0 1px 4px var(--shadow); }
+  .level-dist-bars { display:grid; grid-template-columns:repeat(8,1fr); gap:8px; align-items:end; height:90px; margin-bottom:6px; }
+  .level-bar-col { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; }
+  .level-bar { width:100%; border-radius:3px 3px 0 0; min-height:3px; }
+  .level-bar-count { font-size:0.6rem; color:var(--muted); }
+  .level-bar-label { font-size:0.56rem; color:var(--muted); text-align:center; }
+  .level-dist-labels { display:grid; grid-template-columns:repeat(8,1fr); gap:8px; }
+  .lc0{background:var(--border2)} .lc1{background:#b85a50} .lc2{background:#c07840}
+  .lc3{background:#b09030} .lc4{background:#4a7c59} .lc5{background:#5b7fa6}
+  .lc6{background:#7a6aa0} .lc7{background:#9a7230}
+
+  .group-detail-list { display:flex; flex-direction:column; gap:8px; }
+  .group-detail-row { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; display:grid; grid-template-columns:120px 1fr 110px 90px; align-items:center; gap:10px; box-shadow:0 1px 3px var(--shadow); }
+  .group-detail-row.locked-row { opacity:0.3; }
+  .gd-name { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.7rem; font-weight:500; }
+  .gd-bar-wrap { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .gd-bar-fill { height:100%; border-radius:2px; transition:width 0.4s; }
+  .gd-counts { font-size:0.68rem; color:var(--muted); text-align:right; }
+  .gd-counts strong { color:var(--text2); }
+  .gd-status { font-size:0.6rem; letter-spacing:0.04em; text-align:right; font-style:italic; }
+
+  .upcoming-list { display:flex; flex-direction:column; gap:7px; }
+  .upcoming-row { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:9px 14px; display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; box-shadow:0 1px 3px var(--shadow); }
+  .upcoming-time { color:var(--accent); font-style:italic; font-family:'IM Fell English',serif; }
+  .upcoming-count { color:var(--muted); }
+  .upcoming-count strong { color:var(--text2); }
+
+  /* ── Session progress bar ── */
+  .session-bar { width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; }
+  .session-progress-wrap { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .session-progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.4s ease; }
+  .session-meta { display:flex; justify-content:space-between; align-items:center; }
+  .session-label { font-size:0.65rem; color:var(--muted); letter-spacing:0.08em; font-style:italic; font-family:'IM Fell English',serif; }
+  .session-btns { display:flex; gap:6px; }
+  .session-btn { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.65rem; font-weight:500; letter-spacing:0.06em; padding:4px 10px; border-radius:5px; cursor:pointer; transition:background 0.15s, color 0.15s, border-color 0.15s; border:1px solid var(--border); background:transparent; color:var(--muted); }
+  .session-btn:hover { color:var(--text2); border-color:var(--border2); }
+  .wrap-btn.wrapping { color:var(--gold); border-color:var(--gold); }
+  .end-btn:hover { color:var(--wrong); border-color:var(--wrong); }
+
+  /* Responsive */
+  @media(max-width:660px) {
+    .groups-grid { grid-template-columns:repeat(5,1fr); }
+    .stat-tiles { grid-template-columns:repeat(2,1fr); }
+    .group-detail-row { grid-template-columns:90px 1fr 80px; }
+    .gd-status { display:none; }
+    .stats-bar { display:none; }
+  }
+  @media(max-width:430px) {
+    .groups-grid { grid-template-columns:repeat(3,1fr); }
+    .batch-picker { gap:7px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logo-home">
+    <span class="logo-kana">カ</span>
+    <span>KanaKata<span class="logo-dot"> ·</span></span>
+  </div>
+  <div class="header-right">
+    <div class="stats-bar">
+      <div class="stat">Reviews: <strong id="total-reviews">0</strong></div>
+      <div class="stat">Learned: <strong id="learned-count">0</strong></div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-tab" data-view="learn">Learn</button>
+      <button class="nav-tab active" data-view="review">Review</button>
+      <button class="nav-tab" data-view="studyref">Study</button>
+      <button class="nav-tab" data-view="stats">Stats</button>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">☀︎</button>
+    <button class="reset-btn" id="reset-btn">Reset</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══════════════ LEARN VIEW ══════════════ -->
+  <div class="view" id="view-learn">
+
+    <!-- Setup screen -->
+    <div id="learn-setup-screen">
+      <div class="learn-setup">
+        <div class="learn-header">
+          <h2>Learn</h2>
+          <p>Step through new characters, then prove you know them in a short quiz before they enter your review queue.</p>
+          <div class="learn-available" id="learn-available-label"></div>
+        </div>
+
+        <div>
+          <div class="section-title" style="margin-bottom:10px">Batch size</div>
+          <div class="batch-picker">
+            <div class="batch-btn" data-size="5">5</div>
+            <div class="batch-btn selected" data-size="10">10</div>
+            <div class="batch-btn" data-size="15">15</div>
+          </div>
+        </div>
+
+        <button class="start-learn-btn" id="start-learn-btn">Start Learning →</button>
+      </div>
+    </div>
+
+    <!-- Intro card screen -->
+    <div id="learn-intro-screen" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="learn-counter" id="learn-intro-counter" style="font-size:0.72rem;color:var(--muted)"></div>
+          <div class="learn-counter" id="learn-intro-label" style="font-size:0.72rem;color:var(--muted)">introduction</div>
+        </div>
+        <div class="learn-progress-bar"><div class="learn-progress-fill" id="learn-intro-progress" style="width:0%"></div></div>
+
+        <div class="card-wrap">
+          <div class="card" id="learn-card">
+            <div class="card-main" id="learn-card-kana"></div>
+            <div class="card-romaji-label" id="learn-card-romaji"></div>
+            <div class="sound-hint" id="learn-sound-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+              tap to hear
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:center;width:100%;max-width:440px;margin:0 auto">
+          <button class="results-btn secondary" id="learn-prev-btn">← Prev</button>
+          <button class="results-btn primary" id="learn-next-btn" style="flex:1">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz screen (reuses review card machinery) -->
+    <div id="learn-quiz-screen" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="learn-counter" id="learn-quiz-counter" style="font-size:0.72rem;color:var(--muted)"></div>
+          <div style="font-size:0.72rem;color:var(--muted)">quiz</div>
+        </div>
+        <div class="learn-progress-bar"><div class="learn-progress-fill" id="learn-quiz-progress" style="width:0%"></div></div>
+
+        <div class="queue-info">Question <span id="quiz-q-num">1</span> of <span id="quiz-q-total">0</span></div>
+
+        <div class="card-wrap">
+          <div class="card" id="quiz-flashcard">
+            <div class="card-direction" id="quiz-card-direction"></div>
+            <div class="card-main" id="quiz-card-main"></div>
+            <div class="sound-hint" id="quiz-sound-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+              tap to hear
+            </div>
+          </div>
+        </div>
+
+        <div class="answer-area">
+          <div class="answer-prompt" id="quiz-answer-prompt"></div>
+          <div class="answer-row" id="quiz-type-mode">
+            <input type="text" id="quiz-answer" placeholder="e.g. ka" autocomplete="off" autocorrect="off" spellcheck="false">
+            <button id="quiz-submit-btn">CHECK</button>
+          </div>
+          <div class="mc-grid" id="quiz-mc-mode" style="display:none"></div>
+        </div>
+        <div class="feedback hidden" id="quiz-feedback"></div>
+      </div>
+    </div>
+
+    <!-- Results screen -->
+    <div id="learn-results-screen" style="display:none">
+      <div class="results-screen">
+        <div class="results-score" id="results-score"></div>
+        <div class="results-title" id="results-title"></div>
+        <div class="results-sub" id="results-sub"></div>
+        <div class="results-chars" id="results-chars"></div>
+        <div class="results-btn-row">
+          <button class="results-btn primary" id="results-to-review-btn">Go to Review →</button>
+          <button class="results-btn secondary" id="results-learn-more-btn">Learn More</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /view-learn -->
+
+  <!-- ══════════════ REVIEW VIEW ══════════════ -->
+  <div class="view active" id="view-review">
+
+    <div class="groups-grid" id="groups-grid"></div>
+
+    <div class="unlock-banner" id="unlock-banner">
+      <span style="font-size:1.3rem">🎉</span>
+      <div>
+        <strong id="unlock-text">Group 2 unlocked!</strong><br>
+        <span style="color:var(--muted)">New characters available in Learn.</span>
+      </div>
+    </div>
+
+    <div class="study-section" id="review-section" style="display:flex;flex-direction:column;align-items:center;gap:18px">
+
+      <!-- Session progress bar + controls -->
+      <div class="session-bar" id="session-bar" style="display:none">
+        <div class="session-progress-wrap">
+          <div class="session-progress-fill" id="session-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="session-meta">
+          <span class="session-label" id="session-label">0 / 0</span>
+          <div class="session-btns">
+            <button class="session-btn wrap-btn" id="wrap-up-btn">Wrap Up</button>
+            <button class="session-btn end-btn" id="end-session-btn">End Session</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="queue-info">Due now: <span id="due-count">0</span></div>
+
+      <div class="card-wrap">
+        <div class="card" id="flashcard">
+          <div class="card-direction" id="card-direction"></div>
+          <div class="card-level" id="card-level-label">LVL
+            <div class="card-level-dots" id="level-dots"></div>
+          </div>
+          <div class="card-main" id="card-main" title="Click to hear"></div>
+          <div class="sound-hint" id="sound-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+            tap to hear
+          </div>
+        </div>
+      </div>
+
+      <div class="answer-area">
+        <div class="answer-prompt" id="answer-prompt">type the romaji</div>
+        <div class="answer-row" id="type-mode">
+          <input type="text" id="answer" placeholder="e.g. ka" autocomplete="off" autocorrect="off" spellcheck="false">
+          <button id="submit-btn">CHECK</button>
+        </div>
+        <div class="mc-grid" id="mc-mode" style="display:none"></div>
+      </div>
+      <div class="feedback hidden" id="feedback"></div>
+    </div>
+
+    <div class="empty-state" id="empty-state">
+      <div class="empty-kana">カタカナ</div>
+      <div class="empty-title" id="empty-title">Nothing to review yet</div>
+      <div class="empty-sub" id="empty-sub">Learn some characters first, then come back here.</div>
+      <div class="next-due-label" id="next-due-label"></div>
+      <button class="goto-learn-btn" id="goto-learn-btn">Go to Learn →</button>
+    </div>
+
+  </div><!-- /view-review -->
+
+  <!-- ══════════════ STUDY (REFERENCE) VIEW ══════════════ -->
+  <div class="view" id="view-studyref">
+    <div class="study-ref-controls">
+      <div class="study-ref-title">Learned Characters</div>
+      <button class="show-all-btn" id="show-all-btn">Show all</button>
+    </div>
+    <div id="ref-content"></div>
+  </div>
+
+  <!-- ══════════════ STATS VIEW ══════════════ -->
+  <div class="view" id="view-stats">
+    <div>
+      <div class="section-title">Overview</div>
+      <div class="stat-tiles">
+        <div class="stat-tile accent-tile"><div class="stat-tile-value" id="st-total">0</div><div class="stat-tile-label">Total Reviews</div></div>
+        <div class="stat-tile correct-tile"><div class="stat-tile-value" id="st-accuracy">—</div><div class="stat-tile-label">Accuracy</div></div>
+        <div class="stat-tile gold-tile"><div class="stat-tile-value" id="st-burned">0</div><div class="stat-tile-label">Burned 🔥</div></div>
+        <div class="stat-tile"><div class="stat-tile-value" id="st-learned">0</div><div class="stat-tile-label">Learned</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">SRS Level Distribution</div>
+      <div class="level-dist-wrap">
+        <div class="level-dist-bars" id="level-dist-bars"></div>
+        <div class="level-dist-labels" id="level-dist-labels"></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Group Progress</div>
+      <div class="group-detail-list" id="group-detail-list"></div>
+    </div>
+    <div>
+      <div class="section-title">Upcoming Reviews (next 24h)</div>
+      <div class="upcoming-list" id="upcoming-list"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+//  THEME TOGGLE
+// ─────────────────────────────────────────────
+(function() {
+  const saved = localStorage.getItem('kanakataTheme');
+  const isDark = saved === 'dark';
+  if (isDark) document.documentElement.classList.add('dark');
+  const btn = document.getElementById('theme-toggle');
+  btn.textContent = isDark ? '☽' : '☀︎';
+  btn.addEventListener('click', () => {
+    const nowDark = document.documentElement.classList.toggle('dark');
+    btn.textContent = nowDark ? '☽' : '☀︎';
+    localStorage.setItem('kanakataTheme', nowDark ? 'dark' : 'light');
+  });
+})();
+
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+const GROUPS = [
+  { id:1, label:'Vowels + K', color:'var(--g1)', chars:[
+    {kana:'ア',romaji:'a'},{kana:'イ',romaji:'i'},{kana:'ウ',romaji:'u'},
+    {kana:'エ',romaji:'e'},{kana:'オ',romaji:'o'},{kana:'カ',romaji:'ka'},
+    {kana:'キ',romaji:'ki'},{kana:'ク',romaji:'ku'},{kana:'ケ',romaji:'ke'},
+  ]},
+  { id:2, label:'K + S + T', color:'var(--g2)', chars:[
+    {kana:'コ',romaji:'ko'},{kana:'サ',romaji:'sa'},{kana:'シ',romaji:'shi'},
+    {kana:'ス',romaji:'su'},{kana:'セ',romaji:'se'},{kana:'ソ',romaji:'so'},
+    {kana:'タ',romaji:'ta'},{kana:'チ',romaji:'chi'},{kana:'ツ',romaji:'tsu'},
+  ]},
+  { id:3, label:'T + N + H', color:'var(--g3)', chars:[
+    {kana:'テ',romaji:'te'},{kana:'ト',romaji:'to'},{kana:'ナ',romaji:'na'},
+    {kana:'ニ',romaji:'ni'},{kana:'ヌ',romaji:'nu'},{kana:'ネ',romaji:'ne'},
+    {kana:'ノ',romaji:'no'},{kana:'ハ',romaji:'ha'},{kana:'ヒ',romaji:'hi'},
+  ]},
+  { id:4, label:'H + M + Y', color:'var(--g4)', chars:[
+    {kana:'フ',romaji:'fu'},{kana:'ヘ',romaji:'he'},{kana:'ホ',romaji:'ho'},
+    {kana:'マ',romaji:'ma'},{kana:'ミ',romaji:'mi'},{kana:'ム',romaji:'mu'},
+    {kana:'メ',romaji:'me'},{kana:'モ',romaji:'mo'},{kana:'ヤ',romaji:'ya'},
+  ]},
+  { id:5, label:'Y + R + W + N', color:'var(--g5)', chars:[
+    {kana:'ユ',romaji:'yu'},{kana:'ヨ',romaji:'yo'},{kana:'ラ',romaji:'ra'},
+    {kana:'リ',romaji:'ri'},{kana:'ル',romaji:'ru'},{kana:'レ',romaji:'re'},
+    {kana:'ロ',romaji:'ro'},{kana:'ワ',romaji:'wa'},{kana:'ヲ',romaji:'wo'},
+    {kana:'ン',romaji:'n'},
+  ]},
+  { id:6, label:'Dakuten G+Z', color:'var(--g6)', chars:[
+    {kana:'ガ',romaji:'ga'},{kana:'ギ',romaji:'gi'},{kana:'グ',romaji:'gu'},
+    {kana:'ゲ',romaji:'ge'},{kana:'ゴ',romaji:'go'},
+    {kana:'ザ',romaji:'za'},{kana:'ジ',romaji:'ji'},{kana:'ズ',romaji:'zu'},
+    {kana:'ゼ',romaji:'ze'},{kana:'ゾ',romaji:'zo'},
+  ]},
+  { id:7, label:'Dakuten D+B+P', color:'var(--g7)', chars:[
+    {kana:'ダ',romaji:'da'},{kana:'ヂ',romaji:'ji'},{kana:'ヅ',romaji:'zu'},
+    {kana:'デ',romaji:'de'},{kana:'ド',romaji:'do'},
+    {kana:'バ',romaji:'ba'},{kana:'ビ',romaji:'bi'},{kana:'ブ',romaji:'bu'},
+    {kana:'ベ',romaji:'be'},{kana:'ボ',romaji:'bo'},
+    {kana:'パ',romaji:'pa'},{kana:'ピ',romaji:'pi'},{kana:'プ',romaji:'pu'},
+    {kana:'ペ',romaji:'pe'},{kana:'ポ',romaji:'po'},
+  ]},
+  { id:8, label:'Combos K+S+T', color:'var(--g8)', combo:true, chars:[
+    {kana:'キャ',romaji:'kya'},{kana:'キュ',romaji:'kyu'},{kana:'キョ',romaji:'kyo'},
+    {kana:'シャ',romaji:'sha'},{kana:'シュ',romaji:'shu'},{kana:'ショ',romaji:'sho'},
+    {kana:'チャ',romaji:'cha'},{kana:'チュ',romaji:'chu'},{kana:'チョ',romaji:'cho'},
+    {kana:'ニャ',romaji:'nya'},{kana:'ニュ',romaji:'nyu'},{kana:'ニョ',romaji:'nyo'},
+    {kana:'ヒャ',romaji:'hya'},{kana:'ヒュ',romaji:'hyu'},{kana:'ヒョ',romaji:'hyo'},
+    {kana:'ミャ',romaji:'mya'},{kana:'ミュ',romaji:'myu'},{kana:'ミョ',romaji:'myo'},
+  ]},
+  { id:9, label:'Combos R+Voiced', color:'var(--g9)', combo:true, chars:[
+    {kana:'リャ',romaji:'rya'},{kana:'リュ',romaji:'ryu'},{kana:'リョ',romaji:'ryo'},
+    {kana:'ギャ',romaji:'gya'},{kana:'ギュ',romaji:'gyu'},{kana:'ギョ',romaji:'gyo'},
+    {kana:'ジャ',romaji:'ja'}, {kana:'ジュ',romaji:'ju'}, {kana:'ジョ',romaji:'jo'},
+    {kana:'ビャ',romaji:'bya'},{kana:'ビュ',romaji:'byu'},{kana:'ビョ',romaji:'byo'},
+    {kana:'ピャ',romaji:'pya'},{kana:'ピュ',romaji:'pyu'},{kana:'ピョ',romaji:'pyo'},
+  ]},
+];
+
+// All chars flat, unique — used by distractor logic
+const ALL_CHARS = [];
+{ const seen = new Set();
+  GROUPS.forEach(g => g.chars.forEach(c => { if (!seen.has(c.kana)) { seen.add(c.kana); ALL_CHARS.push(c); }})); }
+
+const INTERVALS = [0,4*3600000,8*3600000,86400000,172800000,604800000,1209600000,Infinity];
+const MAX_LEVEL = 7;
+const UNLOCK_THRESHOLD_LEVEL = 3;
+const UNLOCK_THRESHOLD_FRAC  = 0.8;
+const STORAGE_KEY = 'katakana_srs_v2'; // bumped to v2 — new shape
+
+// ─────────────────────────────────────────────
+//  STATE
+//  Cards now have a `learned` flag.
+//  Fresh install: no cards at all — user must Learn first.
+// ─────────────────────────────────────────────
+function defaultState() {
+  return {
+    cards: [],           // populated as user Learns
+    unlockedGroups: [1], // G1 is always available to Learn
+    totalReviews: 0,
+    totalCorrect: 0,
+    learnedKana: []      // kana strings that have been learned — for quick lookup
+  };
+}
+function loadState() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
+  return defaultState();
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+
+// ─────────────────────────────────────────────
+//  SRS LOGIC
+// ─────────────────────────────────────────────
+function getDueCards() {
+  const now = Date.now();
+  return state.cards.filter(c => c.level < MAX_LEVEL && c.nextReview <= now);
+}
+function getNextDueTime() {
+  const future = state.cards.filter(c => c.level < MAX_LEVEL && c.nextReview > Date.now());
+  return future.length ? Math.min(...future.map(c => c.nextReview)) : null;
+}
+function answerCard(card, correct) {
+  if (correct) { card.level = Math.min(card.level + 1, MAX_LEVEL); state.totalCorrect++; }
+  else          { card.level = Math.max(card.level - 1, 0); }
+  card.nextReview = INTERVALS[card.level] === Infinity ? Infinity : Date.now() + INTERVALS[card.level];
+  state.totalReviews++;
+  saveState();
+  checkUnlocks();
+}
+function checkUnlocks() {
+  GROUPS.forEach((group, idx) => {
+    if (idx === 0 || state.unlockedGroups.includes(group.id)) return;
+    const prev = GROUPS[idx-1];
+    // Count unique kana learned from prev group
+    const prevLearnedCards = state.cards.filter(c => c.group === prev.id);
+    if (!prevLearnedCards.length) return;
+    // Use kana→romaji cards only to avoid double-counting
+    const prevKR = prevLearnedCards.filter(c => c.direction === 'kana→romaji');
+    if (!prevKR.length) return;
+    if (prevKR.filter(c => c.level >= UNLOCK_THRESHOLD_LEVEL).length / prevKR.length >= UNLOCK_THRESHOLD_FRAC) {
+      unlockGroup(group.id);
+    }
+  });
+}
+function unlockGroup(groupId) {
+  if (state.unlockedGroups.includes(groupId)) return;
+  state.unlockedGroups.push(groupId);
+  saveState();
+  showUnlockBanner(groupId);
+}
+
+// Add a batch of chars to SRS (called after Learn quiz passes)
+function commitLearnedBatch(chars) {
+  chars.forEach(c => {
+    if (state.learnedKana.includes(c.kana)) return; // already in system
+    state.learnedKana.push(c.kana);
+    const groupId = GROUPS.find(g => g.chars.some(gc => gc.kana === c.kana))?.id || 1;
+    // Start at level 1 (not 0) — they've been introduced
+    state.cards.push({kana:c.kana,romaji:c.romaji,group:groupId,direction:'kana→romaji',level:1,nextReview:Date.now()+INTERVALS[1]});
+    state.cards.push({kana:c.kana,romaji:c.romaji,group:groupId,direction:'romaji→kana',level:1,nextReview:Date.now()+INTERVALS[1]+60000});
+  });
+  saveState();
+  checkUnlocks();
+}
+
+function getNewChars() {
+  // All chars from unlocked groups that haven't been learned yet
+  const result = [];
+  GROUPS.forEach(g => {
+    if (!state.unlockedGroups.includes(g.id)) return;
+    g.chars.forEach(c => { if (!state.learnedKana.includes(c.kana)) result.push(c); });
+  });
+  return result;
+}
+
+// ─────────────────────────────────────────────
+//  SPEECH
+// ─────────────────────────────────────────────
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='ja-JP'; u.rate=0.85;
+  window.speechSynthesis.speak(u);
+}
+
+// ─────────────────────────────────────────────
+//  VIEW SWITCHING
+// ─────────────────────────────────────────────
+let currentView = 'review';
+function switchView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+  if (name === 'learn')    renderLearnSetup();
+  if (name === 'review')   { updateGroups(); updateDueCount(); }
+  if (name === 'studyref') renderStudyRef();
+  if (name === 'stats')    renderStatsPage();
+}
+
+// ─────────────────────────────────────────────
+//  RESET
+// ─────────────────────────────────────────────
+let resetStep=0, resetTimer=null;
+document.getElementById('reset-btn').addEventListener('click', () => {
+  const btn = document.getElementById('reset-btn');
+  if (resetStep === 0) {
+    resetStep=1; btn.textContent='Sure?'; btn.classList.add('confirm');
+    resetTimer = setTimeout(() => { resetStep=0; btn.textContent='Reset'; btn.classList.remove('confirm'); }, 3000);
+  } else {
+    clearTimeout(resetTimer); resetStep=0; btn.textContent='Reset'; btn.classList.remove('confirm');
+    localStorage.removeItem(STORAGE_KEY);
+    state = defaultState();
+    reviewQueue=[]; reviewCard=null; reviewAnswered=false;
+    sessionSnapshot={}; sessionCleared=new Set(); sessionTotal=0; sessionWrapping=false;
+    document.getElementById('session-bar').style.display='none';
+    switchView('learn');
+    updateHeaderStats();
+  }
+});
+
+// ─────────────────────────────────────────────
+//  DISTRACTOR LOGIC (shared by Review & Learn quiz)
+// ─────────────────────────────────────────────
+function getDistractors(card, poolOverride) {
+  const pool = poolOverride || ALL_CHARS;
+  const r = card.romaji;
+  const stem = r.length===1 ? '__vowel__'
+    : r.startsWith('sh') ? 'sh' : r.startsWith('ch') ? 'ch'
+    : r.startsWith('ts') ? 'ts' : r[0];
+
+  const sameStem = pool.filter(c => {
+    if (c.kana === card.kana) return false;
+    const cr = c.romaji;
+    const cs = cr.length===1?'__vowel__':cr.startsWith('sh')?'sh':cr.startsWith('ch')?'ch':cr.startsWith('ts')?'ts':cr[0];
+    return cs === stem;
+  });
+  const other = pool.filter(c => c.kana !== card.kana && !sameStem.includes(c));
+  sameStem.sort(()=>Math.random()-0.5); other.sort(()=>Math.random()-0.5);
+  return [...sameStem,...other].slice(0,3);
+}
+
+// ─────────────────────────────────────────────
+//  REVIEW SESSION
+// ─────────────────────────────────────────────
+let reviewQueue    = [];
+let reviewCard     = null;
+let reviewAnswered = false;
+let unlockBannerTimer = null;
+
+// Session tracking
+let sessionSnapshot = {};  // cardId → level before session started
+let sessionCleared  = new Set(); // cardIds correctly answered this session
+let sessionTotal    = 0;   // unique cards that entered the queue
+let sessionWrapping = false; // true after Wrap Up pressed
+
+function cardId(card) { return card.kana + '|' + card.direction; }
+
+function buildReviewQueue() {
+  const due = getDueCards().sort(() => Math.random() - 0.5);
+
+  // Snapshot levels before session begins
+  sessionSnapshot = {};
+  due.forEach(c => { sessionSnapshot[cardId(c)] = c.level; });
+
+  reviewQueue    = due;
+  sessionTotal   = due.length;
+  sessionCleared = new Set();
+  sessionWrapping = false;
+
+  updateSessionBar();
+  const bar = document.getElementById('session-bar');
+  bar.style.display = due.length > 0 ? 'flex' : 'none';
+  document.getElementById('wrap-up-btn').textContent = 'Wrap Up';
+  document.getElementById('wrap-up-btn').classList.remove('wrapping');
+}
+
+function updateSessionBar() {
+  const cleared = sessionCleared.size;
+  const total   = sessionTotal;
+  document.getElementById('session-label').textContent =
+    sessionWrapping
+      ? `${reviewQueue.length} left to clear`
+      : `${cleared} / ${total} cleared`;
+  const pct = total > 0 ? (cleared / total) * 100 : 0;
+  document.getElementById('session-progress-fill').style.width = pct + '%';
+}
+
+function reinsertFailed(card) {
+  // Put card back 2–3 positions ahead in queue (or at end if queue is short)
+  const offset = 2 + Math.floor(Math.random() * 2); // 2 or 3
+  const idx = Math.min(offset, reviewQueue.length);
+  reviewQueue.splice(idx, 0, card);
+}
+
+function nextReviewCard() {
+  reviewAnswered = false;
+  document.getElementById('answer').value = '';
+  document.getElementById('answer').className = '';
+  document.getElementById('flashcard').className = 'card';
+  document.getElementById('mc-mode').innerHTML = '';
+  hideReviewFeedback();
+
+  // If wrapping: only continue if there are failed cards still in queue
+  if (sessionWrapping && reviewQueue.length === 0) {
+    endSessionComplete();
+    return;
+  }
+
+  if (!sessionWrapping && !reviewQueue.length) {
+    // Normal flow: try to pull more due cards that arrived mid-session
+    const fresh = getDueCards().filter(c => !sessionCleared.has(cardId(c)));
+    if (fresh.length === 0) { endSessionComplete(); return; }
+    fresh.sort(() => Math.random() - 0.5);
+    fresh.forEach(c => {
+      if (!sessionSnapshot[cardId(c)]) {
+        sessionSnapshot[cardId(c)] = c.level;
+        sessionTotal++;
+      }
+    });
+    reviewQueue.push(...fresh);
+    updateSessionBar();
+    document.getElementById('session-bar').style.display = 'flex';
+  }
+
+  if (!reviewQueue.length) { endSessionComplete(); return; }
+
+  reviewCard = reviewQueue.shift();
+  renderReviewCard(reviewCard);
+  hideReviewEmpty();
+  document.getElementById('review-section').style.display = 'flex';
+  updateDueCount();
+}
+
+function handleReviewResult(card, correct) {
+  const id = cardId(card);
+  answerCard(card, correct);
+
+  if (correct) {
+    // Mark as cleared (first correct counts — duplicates in queue are ignored)
+    if (!sessionCleared.has(id)) sessionCleared.add(id);
+    // Remove any duplicate of this card still sitting in queue
+    reviewQueue = reviewQueue.filter(c => cardId(c) !== id);
+  } else {
+    // Re-insert 2–3 cards later
+    reinsertFailed(card);
+  }
+
+  updateSessionBar();
+  document.getElementById('submit-btn').textContent = 'NEXT →';
+  updateHeaderStats();
+  updateGroups();
+}
+
+function renderReviewCard(card) {
+  const dir    = document.getElementById('card-direction');
+  const main   = document.getElementById('card-main');
+  const prompt = document.getElementById('answer-prompt');
+  if (card.direction === 'kana→romaji') {
+    dir.textContent    = 'katakana → romaji';
+    main.className     = 'card-main' + (card.kana.length > 1 ? ' combo' : '');
+    main.textContent   = card.kana;
+    prompt.textContent = 'type the romaji';
+    document.getElementById('type-mode').style.display = 'flex';
+    document.getElementById('mc-mode').style.display   = 'none';
+    document.getElementById('answer').value = '';
+    document.getElementById('answer').className = '';
+    document.getElementById('answer').focus();
+  } else {
+    dir.textContent    = 'romaji → katakana';
+    main.className     = 'card-main romaji-prompt';
+    main.textContent   = card.romaji;
+    prompt.textContent = 'choose the katakana';
+    document.getElementById('type-mode').style.display = 'none';
+    document.getElementById('mc-mode').style.display   = 'grid';
+    renderMC(card, document.getElementById('mc-mode'), (btn, kana) => reviewSelectOption(btn, kana, card));
+  }
+  const dots = document.getElementById('level-dots');
+  dots.innerHTML = '';
+  for (let i = 1; i <= 6; i++) {
+    const d = document.createElement('div');
+    d.className = 'level-dot' + (i <= card.level ? ' filled' : '');
+    dots.appendChild(d);
+  }
+}
+
+function reviewSelectOption(btnEl, chosenKana, card) {
+  if (reviewAnswered) { nextReviewCard(); return; }
+  reviewAnswered = true;
+  const correct = chosenKana === card.kana;
+  document.querySelectorAll('#mc-mode .mc-btn').forEach(b => {
+    b.disabled = true;
+    if (b.dataset.kana === card.kana && !correct) b.classList.add('mc-reveal');
+  });
+  btnEl.classList.add(correct ? 'mc-correct' : 'mc-wrong');
+  document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
+  showReviewFeedback(correct, card);
+  if (correct) speak(card.kana);
+  handleReviewResult(card, correct);
+}
+
+function checkReviewAnswer() {
+  if (reviewAnswered) { nextReviewCard(); return; }
+  const input = document.getElementById('answer').value.trim().toLowerCase();
+  if (!input) return;
+  reviewAnswered = true;
+  const card = reviewCard;
+  const correct = input === card.romaji;
+  document.getElementById('answer').className = correct ? 'correct' : 'wrong';
+  document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
+  showReviewFeedback(correct, card);
+  if (correct) speak(card.kana);
+  handleReviewResult(card, correct);
+}
+
+// Wrap Up — stop pulling new cards, finish only failed ones
+function wrapUpSession() {
+  if (sessionWrapping) return; // already wrapping
+  sessionWrapping = true;
+  // Purge any unvisited cards that haven't been failed
+  // Keep only cards already in queue (which are re-inserted fails)
+  // Remove cards that were never seen (no snapshot entry from a fail re-insert)
+  reviewQueue = reviewQueue.filter(c => !sessionCleared.has(cardId(c)));
+  // Deduplicate — only keep one copy of each uncleared card
+  const seen = new Set();
+  reviewQueue = reviewQueue.filter(c => {
+    const id = cardId(c);
+    if (seen.has(id)) return false;
+    seen.add(id); return true;
+  });
+  const btn = document.getElementById('wrap-up-btn');
+  btn.textContent = reviewQueue.length > 0
+    ? `${reviewQueue.length} remaining`
+    : 'Finishing…';
+  btn.classList.add('wrapping');
+  btn.disabled = true;
+  updateSessionBar();
+  if (reviewQueue.length === 0) endSessionComplete();
+}
+
+// End Session — revert any card that worsened, save only improvements
+function endSession() {
+  // Revert cards that ended lower than their snapshot
+  state.cards.forEach(c => {
+    const snap = sessionSnapshot[cardId(c)];
+    if (snap !== undefined && c.level < snap) {
+      c.level = snap;
+      c.nextReview = INTERVALS[snap] === Infinity ? Infinity : Date.now() + INTERVALS[snap];
+    }
+  });
+  saveState();
+  reviewQueue = []; reviewCard = null;
+  sessionWrapping = false;
+  document.getElementById('session-bar').style.display = 'none';
+  showReviewEmpty();
+  updateHeaderStats(); updateGroups();
+}
+
+// Session finished naturally (all cleared)
+function endSessionComplete() {
+  reviewQueue = []; reviewCard = null;
+  sessionWrapping = false;
+  document.getElementById('session-bar').style.display = 'none';
+  showReviewEmpty();
+  updateHeaderStats(); updateGroups();
+}
+
+function showReviewFeedback(correct,card) {
+  const el=document.getElementById('feedback');
+  el.className='feedback '+(correct?'correct':'wrong');
+  el.innerHTML=correct
+    ? ['Correct!','Nice!','Perfect!','正解！'][Math.floor(Math.random()*4)]
+    : `Not quite — <strong>${card.romaji}</strong> is <strong>${card.kana}</strong>`;
+}
+function hideReviewFeedback() {
+  const el=document.getElementById('feedback');
+  el.className='feedback hidden'; el.innerHTML='';
+  document.getElementById('submit-btn').textContent='CHECK';
+}
+
+function showReviewEmpty() {
+  document.getElementById('review-section').style.display='none';
+  const empty=document.getElementById('empty-state');
+  empty.classList.add('visible');
+  const hasLearned = state.learnedKana.length > 0;
+  const next=getNextDueTime();
+  document.getElementById('empty-title').textContent = hasLearned ? 'Queue is empty' : 'Nothing to review yet';
+  document.getElementById('empty-sub').textContent   = hasLearned
+    ? 'All due cards reviewed. Come back when more are scheduled.'
+    : 'Learn some characters first, then come back here.';
+  document.getElementById('next-due-label').textContent = next ? 'Next review in '+formatDuration(next-Date.now()) : '';
+  document.getElementById('goto-learn-btn').style.display = hasLearned ? 'none' : 'inline-block';
+}
+function hideReviewEmpty() { document.getElementById('empty-state').classList.remove('visible'); }
+
+function showUnlockBanner(groupId) {
+  const banner=document.getElementById('unlock-banner');
+  document.getElementById('unlock-text').textContent=`Group ${groupId} unlocked!`;
+  banner.classList.add('visible');
+  if (unlockBannerTimer) clearTimeout(unlockBannerTimer);
+  unlockBannerTimer=setTimeout(()=>banner.classList.remove('visible'),5000);
+}
+
+// ─────────────────────────────────────────────
+//  SHARED MC RENDERER
+// ─────────────────────────────────────────────
+function renderMC(card, containerEl, onSelect) {
+  containerEl.innerHTML='';
+  // Use only learned chars as distractor pool so options feel fair
+  const learnedPool = ALL_CHARS.filter(c => state.learnedKana.includes(c.kana));
+  const distractors = getDistractors(card, learnedPool.length >= 4 ? learnedPool : ALL_CHARS);
+  const options = [...distractors,{kana:card.kana,romaji:card.romaji}].sort(()=>Math.random()-0.5);
+  options.forEach(opt => {
+    const btn=document.createElement('button');
+    btn.className='mc-btn'+(opt.kana.length>1?' combo-opt':'');
+    btn.textContent=opt.kana;
+    btn.dataset.kana=opt.kana;
+    btn.addEventListener('click',()=>onSelect(btn,opt.kana));
+    containerEl.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  LEARN FLOW
+// ─────────────────────────────────────────────
+let learnBatchSize = 10;
+let learnBatch     = [];  // chars being learned this session
+let learnIntroIdx  = 0;   // current intro card index
+
+// Quiz state
+let learnQuizQueue   = [];
+let learnQuizCard    = null;
+let learnQuizAnswered= false;
+let learnQuizCorrect = 0;
+let learnQuizTotal   = 0;
+
+function renderLearnSetup() {
+  const available = getNewChars();
+  const label = document.getElementById('learn-available-label');
+  label.textContent = available.length > 0
+    ? `${available.length} new character${available.length!==1?'s':''} available${available.length < learnBatchSize ? ` — session will use all ${available.length}` : ''}`
+    : 'No new characters available — all unlocked groups are learned!';
+
+  // Disable all buttons only if nothing is available at all
+  document.querySelectorAll('.batch-btn').forEach(btn => {
+    btn.classList.toggle('disabled-opt', available.length === 0);
+  });
+
+  document.getElementById('start-learn-btn').disabled = available.length === 0;
+  showLearnScreen('setup');
+}
+
+function showLearnScreen(name) {
+  ['setup','intro','quiz','results'].forEach(s => {
+    document.getElementById('learn-'+s+'-screen').style.display = s===name ? 'block' : 'none';
+  });
+}
+
+function startLearnSession() {
+  const available = getNewChars();
+  learnBatch = available.slice(0, Math.min(learnBatchSize, available.length));
+  learnIntroIdx = 0;
+  showLearnScreen('intro');
+  renderLearnIntroCard();
+}
+
+function renderLearnIntroCard() {
+  const c = learnBatch[learnIntroIdx];
+  const main = document.getElementById('learn-card-kana');
+  main.className = 'card-main' + (c.kana.length > 1 ? ' combo' : '');
+  main.textContent = c.kana;
+  document.getElementById('learn-card-romaji').textContent = c.romaji;
+  document.getElementById('learn-intro-counter').textContent = `${learnIntroIdx+1} / ${learnBatch.length}`;
+  document.getElementById('learn-intro-progress').style.width = `${((learnIntroIdx+1)/learnBatch.length)*100}%`;
+  document.getElementById('learn-prev-btn').style.visibility = learnIntroIdx > 0 ? 'visible' : 'hidden';
+  document.getElementById('learn-next-btn').textContent = learnIntroIdx < learnBatch.length-1 ? 'Next →' : 'Start Quiz →';
+  // Auto-play sound — this is the one place it makes sense
+  setTimeout(() => speak(c.kana), 150);
+}
+
+function startLearnQuiz() {
+  // Build quiz queue: both directions for each char, shuffled
+  learnQuizQueue = [];
+  learnBatch.forEach(c => {
+    learnQuizQueue.push({kana:c.kana,romaji:c.romaji,group:1,direction:'kana→romaji',level:0,nextReview:0});
+    learnQuizQueue.push({kana:c.kana,romaji:c.romaji,group:1,direction:'romaji→kana',level:0,nextReview:0});
+  });
+  learnQuizQueue.sort(()=>Math.random()-0.5);
+  learnQuizTotal   = learnQuizQueue.length;
+  learnQuizCorrect = 0;
+  learnQuizAnswered= false;
+  showLearnScreen('quiz');
+  nextLearnQuizCard();
+}
+
+function nextLearnQuizCard() {
+  learnQuizAnswered=false;
+  document.getElementById('quiz-answer').value='';
+  document.getElementById('quiz-answer').className='';
+  document.getElementById('quiz-flashcard').className='card';
+  document.getElementById('quiz-mc-mode').innerHTML='';
+  hideQuizFeedback();
+
+  if (!learnQuizQueue.length) { showLearnResults(); return; }
+
+  learnQuizCard = learnQuizQueue.shift();
+  const done = learnQuizTotal - learnQuizQueue.length;
+  document.getElementById('quiz-q-num').textContent   = done;
+  document.getElementById('quiz-q-total').textContent = learnQuizTotal;
+  document.getElementById('learn-quiz-progress').style.width = `${(done/learnQuizTotal)*100}%`;
+
+  const card = learnQuizCard;
+  const dir  = document.getElementById('quiz-card-direction');
+  const main = document.getElementById('quiz-card-main');
+  const prompt=document.getElementById('quiz-answer-prompt');
+
+  if (card.direction==='kana→romaji') {
+    dir.textContent  = 'katakana → romaji';
+    main.className   = 'card-main'+(card.kana.length>1?' combo':'');
+    main.textContent = card.kana;
+    prompt.textContent = 'type the romaji';
+    document.getElementById('quiz-type-mode').style.display='flex';
+    document.getElementById('quiz-mc-mode').style.display='none';
+    document.getElementById('quiz-answer').focus();
+  } else {
+    dir.textContent  = 'romaji → katakana';
+    main.className   = 'card-main romaji-prompt';
+    main.textContent = card.romaji;
+    prompt.textContent = 'choose the katakana';
+    document.getElementById('quiz-type-mode').style.display='none';
+    document.getElementById('quiz-mc-mode').style.display='grid';
+    // Distractor pool = only this batch (makes it harder/fairer)
+    renderMCForQuiz(card);
+  }
+}
+
+function renderMCForQuiz(card) {
+  const container = document.getElementById('quiz-mc-mode');
+  container.innerHTML='';
+  const batchPool = learnBatch.map(c=>({kana:c.kana,romaji:c.romaji}));
+  const distractors = getDistractors(card, batchPool.length >= 4 ? batchPool : ALL_CHARS);
+  const options = [...distractors,{kana:card.kana,romaji:card.romaji}].sort(()=>Math.random()-0.5);
+  options.forEach(opt => {
+    const btn=document.createElement('button');
+    btn.className='mc-btn'+(opt.kana.length>1?' combo-opt':'');
+    btn.textContent=opt.kana;
+    btn.dataset.kana=opt.kana;
+    btn.addEventListener('click',()=>quizSelectOption(btn,opt.kana));
+    container.appendChild(btn);
+  });
+}
+
+function quizSelectOption(btnEl, chosenKana) {
+  if (learnQuizAnswered) { nextLearnQuizCard(); return; }
+  learnQuizAnswered=true;
+  const card=learnQuizCard;
+  const correct=chosenKana===card.kana;
+  if (correct) learnQuizCorrect++;
+  document.querySelectorAll('#quiz-mc-mode .mc-btn').forEach(b => {
+    b.disabled=true;
+    if (b.dataset.kana===card.kana && !correct) b.classList.add('mc-reveal');
+  });
+  btnEl.classList.add(correct?'mc-correct':'mc-wrong');
+  document.getElementById('quiz-flashcard').className='card '+(correct?'correct-flash':'wrong-flash');
+  showQuizFeedback(correct,card);
+  if (correct) speak(card.kana);
+  document.getElementById('quiz-submit-btn').textContent='NEXT →';
+}
+
+function checkQuizAnswer() {
+  if (learnQuizAnswered) { nextLearnQuizCard(); return; }
+  const input=document.getElementById('quiz-answer').value.trim().toLowerCase();
+  if (!input) return;
+  learnQuizAnswered=true;
+  const card=learnQuizCard;
+  const correct=input===card.romaji;
+  if (correct) learnQuizCorrect++;
+  document.getElementById('quiz-answer').className=correct?'correct':'wrong';
+  document.getElementById('quiz-flashcard').className='card '+(correct?'correct-flash':'wrong-flash');
+  showQuizFeedback(correct,card);
+  if (correct) speak(card.kana);
+  document.getElementById('quiz-submit-btn').textContent='NEXT →';
+}
+
+function showQuizFeedback(correct,card) {
+  const el=document.getElementById('quiz-feedback');
+  el.className='feedback '+(correct?'correct':'wrong');
+  el.innerHTML=correct
+    ? ['Correct!','Nice!','Perfect!','正解！'][Math.floor(Math.random()*4)]
+    : `Not quite — <strong>${card.romaji}</strong> is <strong>${card.kana}</strong>`;
+}
+function hideQuizFeedback() {
+  const el=document.getElementById('quiz-feedback');
+  el.className='feedback hidden'; el.innerHTML='';
+  document.getElementById('quiz-submit-btn').textContent='CHECK';
+}
+
+function showLearnResults() {
+  // Commit chars to SRS regardless of score
+  commitLearnedBatch(learnBatch);
+  updateHeaderStats(); updateGroups();
+
+  const pct = Math.round((learnQuizCorrect / learnQuizTotal) * 100);
+  const scoreEl = document.getElementById('results-score');
+  scoreEl.textContent = pct + '%';
+  scoreEl.className = 'results-score' + (pct>=80?'':pct>=50?' ok':' bad');
+
+  document.getElementById('results-title').textContent =
+    pct>=80 ? 'Great work!' : pct>=50 ? 'Not bad' : 'Keep at it';
+  document.getElementById('results-sub').textContent =
+    `You got ${learnQuizCorrect} of ${learnQuizTotal} right. These ${learnBatch.length} characters are now in your review queue.`;
+  document.getElementById('results-chars').textContent = learnBatch.map(c=>c.kana).join('　');
+
+  const moreAvailable = getNewChars().length > 0;
+  document.getElementById('results-learn-more-btn').style.display = moreAvailable ? 'inline-block' : 'none';
+
+  showLearnScreen('results');
+}
+
+// ─────────────────────────────────────────────
+//  STUDY REF VIEW
+// ─────────────────────────────────────────────
+let showAllRef = false;
+function renderStudyRef() {
+  const content = document.getElementById('ref-content');
+  const showAllBtn = document.getElementById('show-all-btn');
+  showAllBtn.classList.toggle('active', showAllRef);
+  showAllBtn.textContent = showAllRef ? 'Show learned' : 'Show all';
+  content.innerHTML='';
+
+  GROUPS.forEach(group => {
+    const hasAnyLearned = group.chars.some(c => state.learnedKana.includes(c.kana));
+    if (!hasAnyLearned && !showAllRef) return; // skip groups with nothing learned
+
+    const section = document.createElement('div');
+    section.className = 'ref-group';
+    section.innerHTML = `<div class="ref-group-title" style="--group-color:${group.color}"><span>●</span> ${group.label}</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'ref-chars-grid';
+
+    group.chars.forEach(c => {
+      const learned = state.learnedKana.includes(c.kana);
+      if (!learned && !showAllRef) return;
+      const card = document.createElement('div');
+      card.className = 'ref-char-card' + (learned ? '' : ' not-learned');
+      card.innerHTML = `<div class="ref-kana">${c.kana}</div><div class="ref-romaji">${c.romaji}</div>`;
+      card.addEventListener('click', () => speak(c.kana));
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    content.appendChild(section);
+  });
+
+  if (!content.children.length) {
+    content.innerHTML = '<div class="empty-state visible"><div class="empty-kana">カ</div><div class="empty-title">Nothing learned yet</div><div class="empty-sub">Complete a Learn session first.</div></div>';
+  }
+}
+
+// ─────────────────────────────────────────────
+//  REVIEW UI HELPERS
+// ─────────────────────────────────────────────
+function formatDuration(ms) {
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
+  return h>0?`${h}h ${m}m`:`${m}m`;
+}
+function updateDueCount() { document.getElementById('due-count').textContent=getDueCards().length; }
+function updateHeaderStats() {
+  document.getElementById('total-reviews').textContent=state.totalReviews;
+  document.getElementById('learned-count').textContent=state.learnedKana.length;
+}
+function groupProgress(groupId) {
+  const cards=state.cards.filter(c=>c.group===groupId&&c.direction==='kana→romaji');
+  return cards.length ? cards.reduce((s,c)=>s+c.level,0)/(cards.length*MAX_LEVEL) : 0;
+}
+function updateGroups() {
+  const grid=document.getElementById('groups-grid');
+  grid.innerHTML='';
+  const now=Date.now();
+  GROUPS.forEach(group=>{
+    const unlocked=state.unlockedGroups.includes(group.id);
+    const learnedInGroup=group.chars.filter(c=>state.learnedKana.includes(c.kana)).length;
+    const due=state.cards.filter(c=>c.group===group.id&&c.level<MAX_LEVEL&&c.nextReview<=now).length;
+    const newAvail=unlocked&&learnedInGroup<group.chars.length?group.chars.length-learnedInGroup:0;
+    const progress=groupProgress(group.id);
+    const chars=group.chars.map(c=>c.kana).join('');
+    const el=document.createElement('div');
+    el.className='group-card '+(unlocked?'unlocked':'locked');
+    el.style.setProperty('--group-color',group.color);
+    const badge = due>0 ? `<span class="due-badge">${due}</span>`
+                : newAvail>0 ? `<span class="due-badge new-badge">${newAvail}</span>` : '';
+    el.innerHTML=`
+      <div class="group-label">G${group.id}${badge}</div>
+      <div class="group-chars">${unlocked?chars.slice(0,4)+(chars.length>4?'…':''):'🔒'}</div>
+      <div class="group-progress-bar"><div class="group-progress-fill" style="width:${(progress*100).toFixed(1)}%"></div></div>
+      <div class="group-count">${unlocked?Math.round(progress*100)+'%':'locked'}</div>
+    `;
+    grid.appendChild(el);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  STATS PAGE
+// ─────────────────────────────────────────────
+function renderStatsPage() {
+  document.getElementById('st-total').textContent    = state.totalReviews;
+  document.getElementById('st-accuracy').textContent = state.totalReviews>0
+    ? Math.round((state.totalCorrect/state.totalReviews)*100)+'%':'—';
+  document.getElementById('st-burned').textContent   = state.cards.filter(c=>c.level>=MAX_LEVEL).length;
+  document.getElementById('st-learned').textContent  = state.learnedKana.length;
+
+  const counts=Array(8).fill(0);
+  state.cards.forEach(c=>counts[Math.min(c.level,7)]++);
+  const max=Math.max(...counts,1);
+  const LNAMES=['New','L1','L2','L3','L4','L5','L6','🔥'];
+  const barsEl=document.getElementById('level-dist-bars');
+  const labelsEl=document.getElementById('level-dist-labels');
+  barsEl.innerHTML=''; labelsEl.innerHTML='';
+  counts.forEach((count,lvl)=>{
+    const pct=(count/max)*100;
+    const col=document.createElement('div'); col.className='level-bar-col';
+    col.innerHTML=`<div class="level-bar-count">${count>0?count:''}</div><div class="level-bar lc${lvl}" style="height:${Math.max(pct,2)}%"></div>`;
+    barsEl.appendChild(col);
+    const lbl=document.createElement('div'); lbl.className='level-bar-label'; lbl.textContent=LNAMES[lvl];
+    labelsEl.appendChild(lbl);
+  });
+
+  const list=document.getElementById('group-detail-list'); list.innerHTML='';
+  const now=Date.now();
+  GROUPS.forEach(group=>{
+    const unlocked=state.unlockedGroups.includes(group.id);
+    const cards=state.cards.filter(c=>c.group===group.id&&c.direction==='kana→romaji');
+    const progress=groupProgress(group.id);
+    const due=state.cards.filter(c=>c.group===group.id&&c.level<MAX_LEVEL&&c.nextReview<=now).length;
+    const burnedG=state.cards.filter(c=>c.group===group.id&&c.level>=MAX_LEVEL).length;
+    let statusText='🔒 Locked',statusColor='var(--muted)';
+    if (unlocked) {
+      if (burnedG>0&&burnedG===cards.length*2&&cards.length>0){statusText='🔥 Burned';statusColor='var(--gold)';}
+      else if (due>0){statusText=`${due} due`;statusColor='var(--accent)';}
+      else if (cards.length>0){statusText='✓ Up to date';statusColor='var(--correct)';}
+      else {statusText='Not started';statusColor='var(--muted)';}
+    }
+    const row=document.createElement('div');
+    row.className='group-detail-row'+(unlocked?'':' locked-row');
+    row.innerHTML=`
+      <div class="gd-name" style="color:${group.color}">${group.label}</div>
+      <div class="gd-bar-wrap"><div class="gd-bar-fill" style="width:${(progress*100).toFixed(1)}%;background:${group.color}"></div></div>
+      <div class="gd-counts">${unlocked?`<strong>${Math.round(progress*100)}%</strong> · ${group.chars.length} chars`:'—'}</div>
+      <div class="gd-status" style="color:${statusColor}">${statusText}</div>
+    `;
+    list.appendChild(row);
+  });
+
+  const upList=document.getElementById('upcoming-list'); upList.innerHTML='';
+  const cutoff=now+24*3600000; const buckets={};
+  state.cards.forEach(c=>{
+    if(c.level>=MAX_LEVEL||c.nextReview<=now||c.nextReview>cutoff)return;
+    const h=Math.ceil((c.nextReview-now)/3600000);
+    buckets[h]=(buckets[h]||0)+1;
+  });
+  const keys=Object.keys(buckets).map(Number).sort((a,b)=>a-b);
+  if(!keys.length){upList.innerHTML='<div class="upcoming-row"><span style="color:var(--muted);font-size:0.78rem">Nothing scheduled in the next 24 hours.</span></div>';}
+  else keys.forEach(h=>{
+    const row=document.createElement('div'); row.className='upcoming-row';
+    row.innerHTML=`<span class="upcoming-time">${h<=1?'Within 1 hour':`In ~${h} hours`}</span><span class="upcoming-count"><strong>${buckets[h]}</strong> cards</span>`;
+    upList.appendChild(row);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  EVENT LISTENERS
+// ─────────────────────────────────────────────
+
+// Nav
+document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+document.getElementById('logo-home').addEventListener('click',()=>switchView('review'));
+
+// Review
+document.getElementById('submit-btn').addEventListener('click',()=>{
+  if(reviewCard&&reviewCard.direction==='romaji→kana'){if(reviewAnswered)nextReviewCard();}
+  else checkReviewAnswer();
+});
+document.getElementById('answer').addEventListener('keydown',e=>{if(e.key==='Enter')checkReviewAnswer();});
+document.getElementById('card-main').addEventListener('click',()=>{if(reviewCard)speak(reviewCard.kana);});
+document.getElementById('sound-btn').addEventListener('click',()=>{if(reviewCard)speak(reviewCard.kana);});
+document.getElementById('goto-learn-btn').addEventListener('click',()=>switchView('learn'));
+document.getElementById('wrap-up-btn').addEventListener('click', wrapUpSession);
+document.getElementById('end-session-btn').addEventListener('click', endSession);
+
+// Learn setup
+document.querySelectorAll('.batch-btn').forEach(btn=>btn.addEventListener('click',()=>{
+  if(btn.classList.contains('disabled-opt'))return;
+  document.querySelectorAll('.batch-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  learnBatchSize=parseInt(btn.dataset.size);
+}));
+document.getElementById('start-learn-btn').addEventListener('click',startLearnSession);
+
+// Learn intro
+document.getElementById('learn-prev-btn').addEventListener('click',()=>{
+  if(learnIntroIdx>0){learnIntroIdx--;renderLearnIntroCard();}
+});
+document.getElementById('learn-next-btn').addEventListener('click',()=>{
+  if(learnIntroIdx<learnBatch.length-1){learnIntroIdx++;renderLearnIntroCard();}
+  else startLearnQuiz();
+});
+document.getElementById('learn-sound-btn').addEventListener('click',()=>{
+  if(learnBatch[learnIntroIdx])speak(learnBatch[learnIntroIdx].kana);
+});
+
+// Learn quiz
+document.getElementById('quiz-submit-btn').addEventListener('click',()=>{
+  if(learnQuizCard&&learnQuizCard.direction==='romaji→kana'){if(learnQuizAnswered)nextLearnQuizCard();}
+  else checkQuizAnswer();
+});
+document.getElementById('quiz-answer').addEventListener('keydown',e=>{if(e.key==='Enter')checkQuizAnswer();});
+document.getElementById('quiz-sound-btn').addEventListener('click',()=>{if(learnQuizCard)speak(learnQuizCard.kana);});
+
+// Global Enter to advance MC
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter')return;
+  if(currentView==='review'&&reviewAnswered&&reviewCard?.direction==='romaji→kana')nextReviewCard();
+  if(currentView==='learn'&&learnQuizAnswered&&learnQuizCard?.direction==='romaji→kana')nextLearnQuizCard();
+});
+
+// Results
+document.getElementById('results-to-review-btn').addEventListener('click',()=>{
+  switchView('review');
+  buildReviewQueue(); nextReviewCard();
+});
+document.getElementById('results-learn-more-btn').addEventListener('click',()=>renderLearnSetup());
+
+// Study ref toggle
+document.getElementById('show-all-btn').addEventListener('click',()=>{
+  showAllRef=!showAllRef; renderStudyRef();
+});
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+updateGroups();
+updateHeaderStats();
+updateDueCount();
+buildReviewQueue();
+// Start on Review — show empty state if nothing learned yet
+if(getDueCards().length>0) nextReviewCard();
+else showReviewEmpty();
+
+setInterval(()=>{
+  updateDueCount(); updateGroups();
+  if(document.getElementById('empty-state').classList.contains('visible')){
+    buildReviewQueue();
+    if(getDueCards().length>0)nextReviewCard();
+  }
+  if(currentView==='stats')renderStatsPage();
+},60000);
+</script>
+</body>
+</html>
