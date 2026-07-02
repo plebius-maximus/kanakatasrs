@@ -202,7 +202,7 @@
   .level-dot.filled { background:var(--accent); }
 
   .card-main {
-    font-family: 'Noto Serif JP', serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 5.5rem;
     font-weight: 300;
     line-height: 1;
@@ -414,7 +414,7 @@
   .ref-char-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:10px 6px 8px; text-align:center; cursor:pointer; transition:border-color 0.15s,transform 0.1s,box-shadow 0.15s; box-shadow:0 1px 3px var(--shadow); }
   .ref-char-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 10px var(--shadow); }
   .ref-char-card.not-learned { opacity:0.2; pointer-events:none; }
-  .ref-kana { font-family:'Noto Serif JP',serif; font-size:1.8rem; font-weight:300; line-height:1; }
+  .ref-kana { font-family:'Noto Sans JP',sans-serif; font-size:1.8rem; font-weight:300; line-height:1; }
   .ref-romaji { font-size:0.6rem; color:var(--muted); margin-top:4px; font-style:italic; font-family:'IM Fell English',serif; }
   .ref-char-card:hover .ref-romaji { color:var(--accent); }
 
@@ -455,6 +455,22 @@
   .upcoming-count { color:var(--muted); }
   .upcoming-count strong { color:var(--text2); }
 
+  .mc-next-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    padding: 12px;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .mc-next-btn:hover { background: var(--accent2); }
+
   /* ── Session progress bar ── */
   .session-bar { width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; }
   .session-progress-wrap { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
@@ -490,8 +506,8 @@
   </div>
   <div class="header-right">
     <div class="stats-bar">
-      <div class="stat">Reviews: <strong id="total-reviews">0</strong></div>
-      <div class="stat">Learned: <strong id="learned-count">0</strong></div>
+      <div class="stat">Due: <strong id="total-reviews">0</strong></div>
+      <div class="stat">Learned: <strong id="learned-count">0</strong> chars</div>
     </div>
     <nav class="nav-tabs">
       <button class="nav-tab" data-view="learn">Learn</button>
@@ -595,6 +611,7 @@
             <button id="quiz-submit-btn">CHECK</button>
           </div>
           <div class="mc-grid" id="quiz-mc-mode" style="display:none"></div>
+          <button class="mc-next-btn" id="quiz-mc-next-btn" style="display:none">Next →</button>
         </div>
         <div class="feedback hidden" id="quiz-feedback"></div>
       </div>
@@ -672,6 +689,7 @@
           <button id="submit-btn">CHECK</button>
         </div>
         <div class="mc-grid" id="mc-mode" style="display:none"></div>
+        <button class="mc-next-btn" id="mc-next-btn" style="display:none">Next →</button>
       </div>
       <div class="feedback hidden" id="feedback"></div>
     </div>
@@ -1028,6 +1046,7 @@ function nextReviewCard() {
   document.getElementById('answer').className = '';
   document.getElementById('flashcard').className = 'card';
   document.getElementById('mc-mode').innerHTML = '';
+  document.getElementById('mc-next-btn').style.display = 'none';
   hideReviewFeedback();
 
   // If wrapping: only continue if there are failed cards still in queue
@@ -1094,6 +1113,7 @@ function renderReviewCard(card) {
     document.getElementById('mc-mode').style.display   = 'none';
     document.getElementById('answer').value = '';
     document.getElementById('answer').className = '';
+    document.getElementById('sound-btn').style.visibility = 'hidden';
     document.getElementById('answer').focus();
   } else {
     dir.textContent    = 'romaji → katakana';
@@ -1102,6 +1122,7 @@ function renderReviewCard(card) {
     prompt.textContent = 'choose the katakana';
     document.getElementById('type-mode').style.display = 'none';
     document.getElementById('mc-mode').style.display   = 'grid';
+    document.getElementById('sound-btn').style.visibility = 'visible';
     renderMC(card, document.getElementById('mc-mode'), (btn, kana) => reviewSelectOption(btn, kana, card));
   }
   const dots = document.getElementById('level-dots');
@@ -1126,6 +1147,7 @@ function reviewSelectOption(btnEl, chosenKana, card) {
   showReviewFeedback(correct, card);
   if (correct) speak(card.kana);
   handleReviewResult(card, correct);
+  document.getElementById('mc-next-btn').style.display = 'block';
 }
 
 function checkReviewAnswer() {
@@ -1262,6 +1284,7 @@ let learnQuizCard    = null;
 let learnQuizAnswered= false;
 let learnQuizCorrect = 0;
 let learnQuizTotal   = 0;
+let learnQuizCleared = new Set(); // kana|direction — cleared first-time correct
 
 function renderLearnSetup() {
   const available = getNewChars();
@@ -1318,6 +1341,7 @@ function startLearnQuiz() {
   learnQuizTotal   = learnQuizQueue.length;
   learnQuizCorrect = 0;
   learnQuizAnswered= false;
+  learnQuizCleared = new Set();
   showLearnScreen('quiz');
   nextLearnQuizCard();
 }
@@ -1328,9 +1352,11 @@ function nextLearnQuizCard() {
   document.getElementById('quiz-answer').className='';
   document.getElementById('quiz-flashcard').className='card';
   document.getElementById('quiz-mc-mode').innerHTML='';
+  document.getElementById('quiz-mc-next-btn').style.display='none';
   hideQuizFeedback();
 
-  if (!learnQuizQueue.length) { showLearnResults(); return; }
+  if (!learnQuizQueue.length && learnQuizCleared.size >= learnQuizTotal) { showLearnResults(); return; }
+  if (!learnQuizQueue.length) return; // waiting for re-inserted fails — shouldn't happen
 
   learnQuizCard = learnQuizQueue.shift();
   const done = learnQuizTotal - learnQuizQueue.length;
@@ -1350,6 +1376,7 @@ function nextLearnQuizCard() {
     prompt.textContent = 'type the romaji';
     document.getElementById('quiz-type-mode').style.display='flex';
     document.getElementById('quiz-mc-mode').style.display='none';
+    document.getElementById('quiz-sound-btn').style.visibility='hidden';
     document.getElementById('quiz-answer').focus();
   } else {
     dir.textContent  = 'romaji → katakana';
@@ -1358,6 +1385,7 @@ function nextLearnQuizCard() {
     prompt.textContent = 'choose the katakana';
     document.getElementById('quiz-type-mode').style.display='none';
     document.getElementById('quiz-mc-mode').style.display='grid';
+    document.getElementById('quiz-sound-btn').style.visibility='visible';
     // Distractor pool = only this batch (makes it harder/fairer)
     renderMCForQuiz(card);
   }
@@ -1384,7 +1412,8 @@ function quizSelectOption(btnEl, chosenKana) {
   learnQuizAnswered=true;
   const card=learnQuizCard;
   const correct=chosenKana===card.kana;
-  if (correct) learnQuizCorrect++;
+  const id=card.kana+'|'+card.direction;
+
   document.querySelectorAll('#quiz-mc-mode .mc-btn').forEach(b => {
     b.disabled=true;
     if (b.dataset.kana===card.kana && !correct) b.classList.add('mc-reveal');
@@ -1393,7 +1422,11 @@ function quizSelectOption(btnEl, chosenKana) {
   document.getElementById('quiz-flashcard').className='card '+(correct?'correct-flash':'wrong-flash');
   showQuizFeedback(correct,card);
   if (correct) speak(card.kana);
+
+  if (correct && !learnQuizCleared.has(id)) learnQuizCorrect++;
+  handleQuizResult(card, correct);
   document.getElementById('quiz-submit-btn').textContent='NEXT →';
+  document.getElementById('quiz-mc-next-btn').style.display='block';
 }
 
 function checkQuizAnswer() {
@@ -1403,12 +1436,35 @@ function checkQuizAnswer() {
   learnQuizAnswered=true;
   const card=learnQuizCard;
   const correct=input===card.romaji;
-  if (correct) learnQuizCorrect++;
+  const id=card.kana+'|'+card.direction;
+
   document.getElementById('quiz-answer').className=correct?'correct':'wrong';
   document.getElementById('quiz-flashcard').className='card '+(correct?'correct-flash':'wrong-flash');
   showQuizFeedback(correct,card);
   if (correct) speak(card.kana);
+
+  if (correct && !learnQuizCleared.has(id)) learnQuizCorrect++;
+  handleQuizResult(card, correct);
   document.getElementById('quiz-submit-btn').textContent='NEXT →';
+}
+
+function handleQuizResult(card, correct) {
+  const id = card.kana+'|'+card.direction;
+  if (correct) {
+    learnQuizCleared.add(id);
+    // Remove any duplicate of this card still in queue
+    learnQuizQueue = learnQuizQueue.filter(c => (c.kana+'|'+c.direction) !== id);
+  } else {
+    // Re-insert 2–3 cards later
+    const offset = 2 + Math.floor(Math.random() * 2);
+    const idx = Math.min(offset, learnQuizQueue.length);
+    learnQuizQueue.splice(idx, 0, card);
+  }
+  // Update progress bar based on cleared count
+  const pct = (learnQuizCleared.size / learnQuizTotal) * 100;
+  document.getElementById('learn-quiz-progress').style.width = pct + '%';
+  document.getElementById('quiz-q-num').textContent   = learnQuizCleared.size;
+  document.getElementById('quiz-q-total').textContent = learnQuizTotal;
 }
 
 function showQuizFeedback(correct,card) {
@@ -1429,7 +1485,7 @@ function showLearnResults() {
   commitLearnedBatch(learnBatch);
   updateHeaderStats(); updateGroups();
 
-  const pct = Math.round((learnQuizCorrect / learnQuizTotal) * 100);
+  const pct = learnQuizTotal > 0 ? Math.round((learnQuizCorrect / learnQuizTotal) * 100) : 100;
   const scoreEl = document.getElementById('results-score');
   scoreEl.textContent = pct + '%';
   scoreEl.className = 'results-score' + (pct>=80?'':pct>=50?' ok':' bad');
@@ -1495,8 +1551,8 @@ function formatDuration(ms) {
 }
 function updateDueCount() { document.getElementById('due-count').textContent=getDueCards().length; }
 function updateHeaderStats() {
-  document.getElementById('total-reviews').textContent=state.totalReviews;
-  document.getElementById('learned-count').textContent=state.learnedKana.length;
+  document.getElementById('total-reviews').textContent = getDueCards().length;
+  document.getElementById('learned-count').textContent = state.learnedKana.length;
 }
 function groupProgress(groupId) {
   const cards=state.cards.filter(c=>c.group===groupId&&c.direction==='kana→romaji');
@@ -1613,6 +1669,8 @@ document.getElementById('answer').addEventListener('keydown',e=>{if(e.key==='Ent
 document.getElementById('card-main').addEventListener('click',()=>{if(reviewCard)speak(reviewCard.kana);});
 document.getElementById('sound-btn').addEventListener('click',()=>{if(reviewCard)speak(reviewCard.kana);});
 document.getElementById('goto-learn-btn').addEventListener('click',()=>switchView('learn'));
+document.getElementById('mc-next-btn').addEventListener('click', nextReviewCard);
+document.getElementById('quiz-mc-next-btn').addEventListener('click', nextLearnQuizCard);
 document.getElementById('wrap-up-btn').addEventListener('click', wrapUpSession);
 document.getElementById('end-session-btn').addEventListener('click', endSession);
 
