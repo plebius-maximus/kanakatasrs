@@ -113,7 +113,7 @@
     white-space: nowrap;
   }
   .logo-kana {
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Noto Serif JP', serif;
     font-size: 1.5rem;
     color: var(--accent);
     font-weight: 300;
@@ -242,7 +242,7 @@
   .sound-hint:hover { color:var(--accent); }
 
   /* ── Answer area ── */
-  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; min-height:130px; }
   .answer-prompt { font-size:0.68rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
   .answer-row { display:flex; gap:8px; width:100%; }
 
@@ -315,7 +315,7 @@
   .mc-btn.mc-reveal  { border-color:var(--correct); background:var(--correct-bg); color:var(--correct); opacity:0.6; }
   .mc-btn:disabled { cursor:default; }
 
-  .feedback { min-height:32px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:400; font-style:italic; font-family:'IM Fell English',serif; }
+  .feedback { height:32px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:400; font-style:italic; font-family:'IM Fell English',serif; }
   .feedback.hidden { opacity:0; pointer-events:none; }
   .feedback.correct { color:var(--correct); }
   .feedback.wrong   { color:var(--wrong); }
@@ -477,7 +477,119 @@
   .schedule-labels { display: flex; gap: 4px; margin-top: 4px; }
   .schedule-empty { font-size: 0.8rem; color: var(--muted); font-style: italic; font-family: 'IM Fell English', serif; text-align: center; padding: 30px 0; }
 
-  /* ══ STUDY REF VIEW ══ */
+  /* ══ LEVEL-UP TOAST ══ */
+  .levelup-toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--surface);
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--gold);
+    box-shadow: 0 4px 20px var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .levelup-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ══ ACCURACY GRAPH (Stats) ══ */
+  .accuracy-history-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 18px 12px;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+  .accuracy-graph {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 80px;
+    margin-bottom: 6px;
+  }
+  .acc-bar-col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:3px; }
+  .acc-bar { width:100%; border-radius:3px 3px 0 0; min-height:3px; background:var(--accent); opacity:0.7; }
+  .acc-bar-label { font-size:0.55rem; color:var(--muted); }
+  .acc-empty { font-size:0.78rem; color:var(--muted); font-style:italic; font-family:'IM Fell English',serif; text-align:center; padding:20px 0; }
+
+  /* ══ CONFUSABLES MODE ══ */
+  .confusables-intro { display:flex; flex-direction:column; gap:16px; }
+  .confusables-intro h2 { font-family:'IM Fell English',serif; font-size:1.4rem; font-weight:400; }
+  .confusables-intro p { font-size:0.78rem; color:var(--muted); line-height:1.7; }
+  .confusable-pairs { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; }
+  .confusable-pair-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+    box-shadow: 0 1px 4px var(--shadow);
+  }
+  .confusable-pair-btn:hover { border-color:var(--accent); background:var(--bg2); }
+  .confusable-pair-btn.selected { border-color:var(--accent); background:var(--surface2); }
+  .confusable-pair-kana { font-family:'Noto Sans JP',sans-serif; font-size:1.6rem; font-weight:300; color:var(--text); letter-spacing:0.1em; }
+  .confusable-pair-label { font-size:0.62rem; color:var(--muted); margin-top:4px; font-style:italic; font-family:'IM Fell English',serif; }
+  .start-confuse-btn { background:var(--accent); color:#fff; border:none; border-radius:10px; padding:13px; font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.88rem; font-weight:500; letter-spacing:0.06em; cursor:pointer; transition:background 0.15s; }
+  .start-confuse-btn:hover { background:var(--accent2); }
+  .start-confuse-btn:disabled { opacity:0.4; pointer-events:none; }
+  .confuse-session { display:flex; flex-direction:column; gap:14px; }
+  .confuse-score { font-family:'IM Fell English',serif; font-size:0.85rem; font-style:italic; color:var(--muted); text-align:center; }
+
+  /* ══ DEV PANEL ══ */
+  .dev-panel {
+    background: var(--surface2);
+    border: 1.5px dashed var(--border2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .dev-panel.visible { display:flex; }
+  .dev-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.65rem; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; color:var(--wrong); }
+  .dev-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .dev-btn { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.68rem; padding:5px 10px; border-radius:6px; border:1px solid var(--border2); background:transparent; color:var(--text2); cursor:pointer; transition:background 0.12s; }
+  .dev-btn:hover { background:var(--border); }
+  .dev-btn.danger { border-color:var(--wrong); color:var(--wrong); }
+  .dev-btn.danger:hover { background:var(--wrong-bg); }
+
+  /* ══ EXPORT / IMPORT ══ */
+  .data-btns { display:flex; gap:8px; }
+  .data-btn { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.68rem; font-weight:500; padding:6px 14px; border-radius:7px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; transition:color 0.15s,border-color 0.15s; }
+  .data-btn:hover { color:var(--accent); border-color:var(--accent); }
+
+  /* ══ REVIEW SESSION SUMMARY ══ */
+  .session-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .session-summary.visible { display:flex; }
+  .summary-pct { font-family:'IM Fell English',serif; font-size:3.5rem; color:var(--correct); line-height:1; }
+  .summary-pct.mid { color:var(--gold); }
+  .summary-pct.low { color:var(--wrong); }
+  .summary-label { font-family:'IM Fell English',serif; font-size:1rem; font-style:italic; color:var(--text2); }
+  .summary-detail { font-size:0.75rem; color:var(--muted); }
   .study-ref-controls { display:flex; justify-content:space-between; align-items:center; }
   .study-ref-title { font-family:'IM Fell English',serif; font-size:1rem; color:var(--text2); }
   .show-all-btn { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.68rem; color:var(--muted); background:transparent; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; transition:color 0.15s,border-color 0.15s; }
@@ -595,9 +707,14 @@
         <button class="nav-tab" data-view="learn">Learn</button>
         <button class="nav-tab active" data-view="review">Review</button>
         <button class="nav-tab" data-view="studyref">Study</button>
+        <button class="nav-tab" data-view="confusables">Confuse</button>
         <button class="nav-tab" data-view="stats">Stats</button>
       </nav>
       <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode">☀︎</button>
+      <div class="data-btns">
+        <button class="data-btn" id="export-btn" title="Export progress">↑ Export</button>
+        <label class="data-btn" title="Import progress" style="cursor:pointer">↓ Import<input type="file" id="import-file" accept=".json" style="display:none"></label>
+      </div>
       <button class="reset-btn" id="reset-btn">Reset</button>
     </div>
   </div>
@@ -718,6 +835,24 @@
   <!-- ══════════════ REVIEW VIEW ══════════════ -->
   <div class="view active" id="view-review">
 
+    <!-- Session summary (shown after session completes) -->
+    <div class="session-summary" id="session-summary">
+      <div class="summary-pct" id="summary-pct">—</div>
+      <div class="summary-label" id="summary-label">Session complete</div>
+      <div class="summary-detail" id="summary-detail"></div>
+      <button class="goto-learn-btn" id="summary-review-btn" style="margin-top:4px">Back to Review</button>
+    </div>
+
+    <!-- Dev panel (hidden, triple-click logo to open) -->
+    <div class="dev-panel" id="dev-panel">
+      <div class="dev-title">⚙ Dev Mode</div>
+      <div class="dev-row" id="dev-unlock-row"></div>
+      <div class="dev-row">
+        <button class="dev-btn danger" id="dev-reset-levels">Reset all levels to 1</button>
+        <button class="dev-btn danger" id="dev-make-due">Make all cards due now</button>
+      </div>
+    </div>
+
     <div class="groups-grid" id="groups-grid"></div>
 
     <div class="unlock-banner" id="unlock-banner">
@@ -807,6 +942,48 @@
     <div id="ref-content"></div>
   </div>
 
+  <!-- ══════════════ CONFUSABLES VIEW ══════════════ -->
+  <div class="view" id="view-confusables">
+    <div id="confuse-setup-screen">
+      <div class="confusables-intro">
+        <h2>Confusables</h2>
+        <p>Drill visually similar characters side-by-side. Choose a pair group to practice, then identify the correct character or reading under pressure.</p>
+        <div class="section-title" style="margin-top:8px">Select pair groups to drill</div>
+        <div class="confusable-pairs" id="confusable-pairs"></div>
+        <button class="start-confuse-btn" id="start-confuse-btn" disabled>Start Drill →</button>
+      </div>
+    </div>
+    <div id="confuse-session-screen" style="display:none">
+      <div class="confuse-session">
+        <div class="learn-progress-bar"><div class="learn-progress-fill" id="confuse-progress" style="width:0%"></div></div>
+        <div class="confuse-score" id="confuse-score"></div>
+        <div class="card-wrap">
+          <div class="card" id="confuse-card">
+            <div class="card-direction" id="confuse-direction"></div>
+            <div class="card-main" id="confuse-main"></div>
+          </div>
+        </div>
+        <div class="answer-area">
+          <div class="answer-prompt" id="confuse-prompt"></div>
+          <div class="mc-grid" id="confuse-mc"></div>
+          <button class="mc-next-btn" id="confuse-next-btn" style="display:none">Next →</button>
+        </div>
+        <div class="feedback hidden" id="confuse-feedback"></div>
+      </div>
+    </div>
+    <div id="confuse-results-screen" style="display:none">
+      <div class="results-screen">
+        <div class="summary-pct" id="confuse-result-pct"></div>
+        <div class="results-title" id="confuse-result-title"></div>
+        <div class="results-sub" id="confuse-result-sub"></div>
+        <div class="results-btn-row">
+          <button class="results-btn primary" id="confuse-retry-btn">Drill Again</button>
+          <button class="results-btn secondary" id="confuse-back-btn">Back</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ══════════════ STATS VIEW ══════════════ -->
   <div class="view" id="view-stats">
     <div>
@@ -816,6 +993,12 @@
         <div class="stat-tile correct-tile"><div class="stat-tile-value" id="st-accuracy">—</div><div class="stat-tile-label">Accuracy</div></div>
         <div class="stat-tile gold-tile"><div class="stat-tile-value" id="st-burned">0</div><div class="stat-tile-label">Burned 🔥</div></div>
         <div class="stat-tile"><div class="stat-tile-value" id="st-learned">0</div><div class="stat-tile-label">Learned</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Review Accuracy History</div>
+      <div class="accuracy-history-wrap">
+        <div class="accuracy-graph" id="accuracy-graph"></div>
       </div>
     </div>
     <div>
@@ -834,6 +1017,9 @@
       <div class="upcoming-list" id="upcoming-list"></div>
     </div>
   </div>
+
+  <!-- Level-up toast -->
+  <div class="levelup-toast" id="levelup-toast"></div>
 
 </main>
 
@@ -924,7 +1110,49 @@ const INTERVALS = [0,4*3600000,8*3600000,86400000,172800000,604800000,1209600000
 const MAX_LEVEL = 7;
 const UNLOCK_THRESHOLD_LEVEL = 3;
 const UNLOCK_THRESHOLD_FRAC  = 0.8;
-const STORAGE_KEY = 'katakana_srs_v2'; // bumped to v2 — new shape
+const STORAGE_KEY = 'katakana_srs_v2';
+
+// Level names for toast
+const LEVEL_NAMES = ['New','Novice','Apprentice I','Apprentice II','Journeyman','Expert','Master','Burned'];
+
+// Confusable pair groups — visually similar katakana
+const CONFUSABLE_GROUPS = [
+  { label:'シ vs ツ', hint:'Both curved — brush direction differs', chars:[{kana:'シ',romaji:'shi'},{kana:'ツ',romaji:'tsu'}] },
+  { label:'ソ vs ン', hint:'Stroke angle — subtle but critical',   chars:[{kana:'ソ',romaji:'so'}, {kana:'ン',romaji:'n'}]   },
+  { label:'ア vs マ', hint:'Top stroke makes the difference',      chars:[{kana:'ア',romaji:'a'},  {kana:'マ',romaji:'ma'}]  },
+  { label:'ウ vs ワ', hint:'The crown on ウ sets it apart',        chars:[{kana:'ウ',romaji:'u'},  {kana:'ワ',romaji:'wa'}]  },
+  { label:'ク vs タ', hint:'Very similar — watch the right side',  chars:[{kana:'ク',romaji:'ku'}, {kana:'タ',romaji:'ta'}]  },
+  { label:'ヌ vs メ', hint:'Cross vs curved — easy to swap',       chars:[{kana:'ヌ',romaji:'nu'}, {kana:'メ',romaji:'me'}]  },
+  { label:'オ vs ホ', hint:'Extra vertical stroke on ホ',          chars:[{kana:'オ',romaji:'o'},  {kana:'ホ',romaji:'ho'}]  },
+  { label:'フ vs ワ', hint:'Hook vs open bottom',                  chars:[{kana:'フ',romaji:'fu'}, {kana:'ワ',romaji:'wa'}]  },
+  { label:'ロ vs 口', hint:'Katakana vs kanji look-alike',         chars:[{kana:'ロ',romaji:'ro'}, {kana:'コ',romaji:'ko'}]  },
+  { label:'テ vs ア', hint:'Crossbar vs descender',                chars:[{kana:'テ',romaji:'te'}, {kana:'ア',romaji:'a'}]   },
+  { label:'リ vs ル', hint:'Extra leg on ル',                      chars:[{kana:'リ',romaji:'ri'}, {kana:'ル',romaji:'ru'}]  },
+  { label:'ハ vs ク vs ケ', hint:'All have rightward strokes',     chars:[{kana:'ハ',romaji:'ha'}, {kana:'ク',romaji:'ku'}, {kana:'ケ',romaji:'ke'}] },
+];
+
+// ─────────────────────────────────────────────
+//  LEVEL-UP SOUND (Web Audio API — no file needed)
+// ─────────────────────────────────────────────
+function playLevelUpSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Short ascending chime — three quick notes
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      const t = ctx.currentTime + i * 0.1;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      osc.start(t); osc.stop(t + 0.25);
+    });
+  } catch(e) {} // fail silently if audio not available
+}
 
 // ─────────────────────────────────────────────
 //  STATE
@@ -933,20 +1161,72 @@ const STORAGE_KEY = 'katakana_srs_v2'; // bumped to v2 — new shape
 // ─────────────────────────────────────────────
 function defaultState() {
   return {
-    cards: [],           // populated as user Learns
-    unlockedGroups: [1], // G1 is always available to Learn
+    cards: [],
+    unlockedGroups: [1],
     totalReviews: 0,
     totalCorrect: 0,
-    learnedKana: []      // kana strings that have been learned — for quick lookup
+    learnedKana: [],
+    accuracyHistory: [] // [{date, correct, total}] — one entry per session
   };
 }
 function loadState() {
-  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e) {}
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) {
+    const s = JSON.parse(r);
+    if (!s.accuracyHistory) s.accuracyHistory = [];
+    return s;
+  }} catch(e) {}
   return defaultState();
 }
 function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
 let state = loadState();
+
+// ─────────────────────────────────────────────
+//  EXPORT / IMPORT
+// ─────────────────────────────────────────────
+function exportProgress() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `kanakatabackup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+function importProgress(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (!imported.cards || !imported.learnedKana) throw new Error('Invalid file');
+      if (!imported.accuracyHistory) imported.accuracyHistory = [];
+      state = imported;
+      saveState();
+      reviewQueue=[]; reviewCard=null; reviewAnswered=false;
+      sessionSnapshot={}; sessionCleared=new Set(); sessionTotal=0; sessionWrapping=false;
+      updateGroups(); updateHeaderStats(); updateDueCount(); renderScheduleChart();
+      buildReviewQueue();
+      if (getDueCards().length > 0) nextReviewCard(); else showReviewEmpty();
+      switchView('review');
+      showToast('Progress imported successfully!', 'var(--correct)');
+    } catch(err) {
+      showToast('Import failed — invalid file', 'var(--wrong)');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─────────────────────────────────────────────
+//  TOAST NOTIFICATION
+// ─────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, color) {
+  const el = document.getElementById('levelup-toast');
+  el.textContent = msg;
+  el.style.color = color || 'var(--gold)';
+  el.style.borderColor = color || 'var(--gold)';
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
 
 // ─────────────────────────────────────────────
 //  SRS LOGIC
@@ -960,12 +1240,19 @@ function getNextDueTime() {
   return future.length ? Math.min(...future.map(c => c.nextReview)) : null;
 }
 function answerCard(card, correct) {
+  const prevLevel = card.level;
   if (correct) { card.level = Math.min(card.level + 1, MAX_LEVEL); state.totalCorrect++; }
   else          { card.level = Math.max(card.level - 1, 0); }
   card.nextReview = INTERVALS[card.level] === Infinity ? Infinity : Date.now() + INTERVALS[card.level];
   state.totalReviews++;
   saveState();
   checkUnlocks();
+  // Fire level-up toast if card moved up a level
+  if (correct && card.level > prevLevel && card.level <= MAX_LEVEL) {
+    const name = LEVEL_NAMES[card.level] || `Level ${card.level}`;
+    showToast(`${card.kana} → ${name} ✦`, 'var(--gold)');
+    if (card.level >= 3) playLevelUpSound(); // only sound for meaningful level-ups
+  }
 }
 function checkUnlocks() {
   GROUPS.forEach((group, idx) => {
@@ -1033,10 +1320,11 @@ function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
-  if (name === 'learn')    renderLearnSetup();
-  if (name === 'review')   { updateGroups(); updateDueCount(); renderScheduleChart(); }
-  if (name === 'studyref') renderStudyRef();
-  if (name === 'stats')    renderStatsPage();
+  if (name === 'learn')         renderLearnSetup();
+  if (name === 'review')        { updateGroups(); updateDueCount(); renderScheduleChart(); }
+  if (name === 'studyref')      renderStudyRef();
+  if (name === 'confusables')   renderConfusablesSetup();
+  if (name === 'stats')         renderStatsPage();
 }
 
 // ─────────────────────────────────────────────
@@ -1303,11 +1591,36 @@ function endSession() {
 
 // Session finished naturally (all cleared)
 function endSessionComplete() {
+  // Save accuracy to history
+  if (sessionTotal > 0) {
+    const sessionCorrect = sessionCleared.size; // proxy — cards cleared = correctly answered
+    state.accuracyHistory.push({
+      date: new Date().toISOString().slice(0,10),
+      correct: state.totalCorrect,
+      total: state.totalReviews
+    });
+    // Keep only last 20 sessions
+    if (state.accuracyHistory.length > 20) state.accuracyHistory.shift();
+    saveState();
+  }
+
+  // Show session summary
+  const pct = sessionTotal > 0 ? Math.round((sessionCleared.size / sessionTotal) * 100) : 100;
+  const pctEl = document.getElementById('summary-pct');
+  pctEl.textContent = pct + '%';
+  pctEl.className = 'summary-pct' + (pct >= 80 ? '' : pct >= 50 ? ' mid' : ' low');
+  document.getElementById('summary-label').textContent =
+    pct >= 80 ? 'Excellent session' : pct >= 50 ? 'Good effort' : 'Keep practising';
+  document.getElementById('summary-detail').textContent =
+    `${sessionCleared.size} of ${sessionTotal} cards cleared`;
+  document.getElementById('session-summary').classList.add('visible');
+
   reviewQueue = []; reviewCard = null;
   sessionWrapping = false;
   document.getElementById('session-bar').style.display = 'none';
-  showReviewEmpty();
-  updateHeaderStats(); updateGroups();
+  document.getElementById('review-section').style.display = 'none';
+  hideReviewEmpty();
+  updateHeaderStats(); updateGroups(); renderScheduleChart();
 }
 
 function showReviewFeedback(correct,card) {
@@ -1323,18 +1636,37 @@ function hideReviewFeedback() {
   document.getElementById('submit-btn').textContent='CHECK';
 }
 
+let nextDueTimer = null;
 function showReviewEmpty() {
   document.getElementById('review-section').style.display='none';
+  document.getElementById('session-summary').classList.remove('visible');
   const empty=document.getElementById('empty-state');
   empty.classList.add('visible');
   const hasLearned = state.learnedKana.length > 0;
-  const next=getNextDueTime();
   document.getElementById('empty-title').textContent = hasLearned ? 'Queue is empty' : 'Nothing to review yet';
   document.getElementById('empty-sub').textContent   = hasLearned
     ? 'All due cards reviewed. Come back when more are scheduled.'
     : 'Learn some characters first, then come back here.';
-  document.getElementById('next-due-label').textContent = next ? 'Next review in '+formatDuration(next-Date.now()) : '';
   document.getElementById('goto-learn-btn').style.display = hasLearned ? 'none' : 'inline-block';
+
+  // Live countdown
+  if (nextDueTimer) clearInterval(nextDueTimer);
+  function updateCountdown() {
+    const next = getNextDueTime();
+    const label = document.getElementById('next-due-label');
+    if (!next) { label.textContent = ''; return; }
+    const diff = next - Date.now();
+    if (diff <= 0) {
+      label.textContent = 'New reviews available!';
+      clearInterval(nextDueTimer);
+      buildReviewQueue();
+      if (getDueCards().length > 0) nextReviewCard();
+    } else {
+      label.textContent = 'Next review in ' + formatDuration(diff);
+    }
+  }
+  updateCountdown();
+  nextDueTimer = setInterval(updateCountdown, 1000);
 }
 function hideReviewEmpty() { document.getElementById('empty-state').classList.remove('visible'); }
 
@@ -1643,6 +1975,7 @@ function renderStudyRef() {
 //  REVIEW UI HELPERS
 // ─────────────────────────────────────────────
 function formatDuration(ms) {
+  if (ms < 60000) return `${Math.ceil(ms/1000)}s`;
   const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
   return h>0?`${h}h ${m}m`:`${m}m`;
 }
@@ -1675,7 +2008,7 @@ function updateGroups() {
       <div class="group-label">G${group.id}${badge}</div>
       <div class="group-chars">${unlocked?chars.slice(0,4)+(chars.length>4?'…':''):'🔒'}</div>
       <div class="group-progress-bar"><div class="group-progress-fill" style="width:${(progress*100).toFixed(1)}%"></div></div>
-      <div class="group-count">${unlocked?Math.round(progress*100)+'%':'locked'}</div>
+      <div class="group-count" title="Average SRS level across all cards in this group">${unlocked?Math.round(progress*100)+'% mastered':'locked'}</div>
     `;
     grid.appendChild(el);
   });
@@ -1690,6 +2023,31 @@ function renderStatsPage() {
     ? Math.round((state.totalCorrect/state.totalReviews)*100)+'%':'—';
   document.getElementById('st-burned').textContent   = state.cards.filter(c=>c.level>=MAX_LEVEL).length;
   document.getElementById('st-learned').textContent  = state.learnedKana.length;
+
+  // Accuracy history graph — last 10 sessions
+  const accEl = document.getElementById('accuracy-graph');
+  accEl.innerHTML = '';
+  const history = state.accuracyHistory.slice(-10);
+  if (history.length < 2) {
+    accEl.innerHTML = '<div class="acc-empty">Complete a few review sessions to see your accuracy trend.</div>';
+  } else {
+    const max = 100;
+    history.forEach((entry, i) => {
+      // Calculate per-session accuracy by diffing from previous entry
+      const prevCorrect = i === 0 ? 0 : history[i-1].correct;
+      const prevTotal   = i === 0 ? 0 : history[i-1].total;
+      const sessionCorrect = entry.correct - prevCorrect;
+      const sessionTotal   = entry.total   - prevTotal;
+      const pct = sessionTotal > 0 ? Math.round((sessionCorrect / sessionTotal) * 100) : null;
+      const col = document.createElement('div');
+      col.className = 'acc-bar-col';
+      col.innerHTML = pct !== null
+        ? `<div class="acc-bar" style="height:${pct}%;background:${pct>=80?'var(--correct)':pct>=50?'var(--gold)':'var(--wrong)'}"></div>
+           <div class="acc-bar-label">${entry.date.slice(5)}</div>`
+        : `<div class="acc-bar" style="height:2%"></div><div class="acc-bar-label">${entry.date.slice(5)}</div>`;
+      accEl.appendChild(col);
+    });
+  }
 
   const counts=Array(8).fill(0);
   state.cards.forEach(c=>counts[Math.min(c.level,7)]++);
@@ -1836,12 +2194,238 @@ function renderScheduleChart() {
 }
 
 // ─────────────────────────────────────────────
+//  CONFUSABLES MODE
+// ─────────────────────────────────────────────
+let selectedConfusableGroups = new Set();
+let confuseQueue = [], confuseCard = null, confuseAnswered = false;
+let confuseCorrect = 0, confuseTotal = 0;
+
+function renderConfusablesSetup() {
+  const container = document.getElementById('confusable-pairs');
+  container.innerHTML = '';
+  selectedConfusableGroups.clear();
+
+  CONFUSABLE_GROUPS.forEach((group, idx) => {
+    const btn = document.createElement('div');
+    btn.className = 'confusable-pair-btn';
+    btn.dataset.idx = idx;
+    btn.innerHTML = `
+      <div class="confusable-pair-kana">${group.chars.map(c=>c.kana).join(' · ')}</div>
+      <div class="confusable-pair-label">${group.label}</div>
+    `;
+    btn.addEventListener('click', () => {
+      btn.classList.toggle('selected');
+      if (btn.classList.contains('selected')) selectedConfusableGroups.add(idx);
+      else selectedConfusableGroups.delete(idx);
+      document.getElementById('start-confuse-btn').disabled = selectedConfusableGroups.size === 0;
+    });
+    container.appendChild(btn);
+  });
+
+  document.getElementById('confuse-setup-screen').style.display = 'block';
+  document.getElementById('confuse-session-screen').style.display = 'none';
+  document.getElementById('confuse-results-screen').style.display = 'none';
+}
+
+function startConfuseDrill() {
+  // Build cards from selected groups — both directions
+  const chars = [];
+  selectedConfusableGroups.forEach(idx => {
+    CONFUSABLE_GROUPS[idx].chars.forEach(c => chars.push(c));
+  });
+
+  confuseQueue = [];
+  chars.forEach(c => {
+    confuseQueue.push({...c, direction:'kana→romaji'});
+    confuseQueue.push({...c, direction:'romaji→kana'});
+  });
+  confuseQueue.sort(() => Math.random() - 0.5);
+  confuseTotal = confuseQueue.length;
+  confuseCorrect = 0;
+  confuseAnswered = false;
+
+  document.getElementById('confuse-setup-screen').style.display = 'none';
+  document.getElementById('confuse-session-screen').style.display = 'block';
+  document.getElementById('confuse-results-screen').style.display = 'none';
+  nextConfuseCard();
+}
+
+function nextConfuseCard() {
+  confuseAnswered = false;
+  document.getElementById('confuse-mc').innerHTML = '';
+  document.getElementById('confuse-next-btn').style.display = 'none';
+  document.getElementById('confuse-card').className = 'card';
+  document.getElementById('confuse-feedback').className = 'feedback hidden';
+  document.getElementById('confuse-feedback').innerHTML = '';
+
+  if (!confuseQueue.length) { showConfuseResults(); return; }
+
+  confuseCard = confuseQueue.shift();
+  const done = confuseTotal - confuseQueue.length;
+  document.getElementById('confuse-progress').style.width = `${(done/confuseTotal)*100}%`;
+  document.getElementById('confuse-score').textContent = `${done} / ${confuseTotal}`;
+
+  const main = document.getElementById('confuse-main');
+  const dir  = document.getElementById('confuse-direction');
+  const prompt = document.getElementById('confuse-prompt');
+
+  // Build distractor pool from all chars in selected groups only
+  const allConfuseChars = [];
+  selectedConfusableGroups.forEach(idx => CONFUSABLE_GROUPS[idx].chars.forEach(c => allConfuseChars.push(c)));
+
+  if (confuseCard.direction === 'kana→romaji') {
+    dir.textContent = 'katakana → romaji';
+    main.className  = 'card-main';
+    main.textContent = confuseCard.kana;
+    prompt.textContent = 'choose the reading';
+    // MC options are romaji
+    const pool = allConfuseChars.filter(c => c.kana !== confuseCard.kana);
+    pool.sort(() => Math.random() - 0.5);
+    const options = [confuseCard, ...pool.slice(0,3)].sort(() => Math.random() - 0.5);
+    renderConfuseMC(options, opt => opt.romaji, opt => opt.romaji === confuseCard.romaji, opt => opt.romaji);
+  } else {
+    dir.textContent = 'romaji → katakana';
+    main.className  = 'card-main romaji-prompt';
+    main.textContent = confuseCard.romaji;
+    prompt.textContent = 'choose the character';
+    const pool = allConfuseChars.filter(c => c.kana !== confuseCard.kana);
+    pool.sort(() => Math.random() - 0.5);
+    const options = [confuseCard, ...pool.slice(0,3)].sort(() => Math.random() - 0.5);
+    renderConfuseMC(options, opt => opt.kana, opt => opt.kana === confuseCard.kana, opt => opt.kana);
+  }
+}
+
+function renderConfuseMC(options, labelFn, isCorrectFn, keyFn) {
+  const grid = document.getElementById('confuse-mc');
+  grid.innerHTML = '';
+  const isKana = confuseCard.direction === 'romaji→kana';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = isKana ? 'mc-btn' : 'mc-btn';
+    if (isKana) btn.style.fontFamily = "'Noto Sans JP', sans-serif";
+    btn.textContent = labelFn(opt);
+    btn.addEventListener('click', () => {
+      if (confuseAnswered) { nextConfuseCard(); return; }
+      confuseAnswered = true;
+      const correct = isCorrectFn(opt);
+      if (correct) confuseCorrect++;
+      grid.querySelectorAll('button').forEach(b => {
+        b.disabled = true;
+        if (isCorrectFn({kana:b.textContent, romaji:b.textContent}) || b.textContent === (isKana ? confuseCard.kana : confuseCard.romaji)) {
+          if (!correct) b.classList.add('mc-reveal');
+        }
+      });
+      btn.classList.add(correct ? 'mc-correct' : 'mc-wrong');
+      document.getElementById('confuse-card').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
+      const fb = document.getElementById('confuse-feedback');
+      fb.className = 'feedback ' + (correct ? 'correct' : 'wrong');
+      fb.innerHTML = correct
+        ? ['Correct!','Nice!','Exactly!'][Math.floor(Math.random()*3)]
+        : `Not quite — <strong>${confuseCard.romaji}</strong> is <strong>${confuseCard.kana}</strong>`;
+      if (correct) speak(confuseCard.kana);
+      document.getElementById('confuse-next-btn').style.display = 'block';
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function showConfuseResults() {
+  document.getElementById('confuse-session-screen').style.display = 'none';
+  document.getElementById('confuse-results-screen').style.display = 'block';
+  const pct = Math.round((confuseCorrect / confuseTotal) * 100);
+  const pctEl = document.getElementById('confuse-result-pct');
+  pctEl.textContent = pct + '%';
+  pctEl.className = 'summary-pct' + (pct>=80?'':pct>=50?' mid':' low');
+  document.getElementById('confuse-result-title').textContent =
+    pct>=80 ? 'Excellent! These are getting clearer.' : pct>=50 ? 'Getting there — drill again!' : 'These are tricky — keep going!';
+  document.getElementById('confuse-result-sub').textContent =
+    `${confuseCorrect} correct out of ${confuseTotal} questions.`;
+}
+
+// ─────────────────────────────────────────────
+//  DEV PANEL (triple-click logo to open)
+// ─────────────────────────────────────────────
+let logoClickCount = 0, logoClickTimer = null;
+function initDevPanel() {
+  const row = document.getElementById('dev-unlock-row');
+  row.innerHTML = '';
+  GROUPS.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'dev-btn';
+    btn.textContent = `Unlock G${g.id}`;
+    btn.addEventListener('click', () => {
+      if (!state.unlockedGroups.includes(g.id)) {
+        unlockGroup(g.id);
+        // Also add all chars as learned
+        g.chars.forEach(c => {
+          if (!state.learnedKana.includes(c.kana)) {
+            state.learnedKana.push(c.kana);
+            state.cards.push({kana:c.kana,romaji:c.romaji,group:g.id,direction:'kana→romaji',level:1,nextReview:Date.now()});
+            state.cards.push({kana:c.kana,romaji:c.romaji,group:g.id,direction:'romaji→kana',level:1,nextReview:Date.now()+60000});
+          }
+        });
+        saveState();
+        updateGroups(); updateHeaderStats(); updateDueCount(); renderScheduleChart();
+        showToast(`Group ${g.id} unlocked in dev mode`, 'var(--accent)');
+      }
+    });
+    row.appendChild(btn);
+  });
+}
+
+// ─────────────────────────────────────────────
 //  EVENT LISTENERS
 // ─────────────────────────────────────────────
 
 // Nav
 document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
-document.getElementById('logo-home').addEventListener('click',()=>switchView('review'));
+
+// Export / Import
+document.getElementById('export-btn').addEventListener('click', exportProgress);
+document.getElementById('import-file').addEventListener('change', e => {
+  if (e.target.files[0]) importProgress(e.target.files[0]);
+  e.target.value = ''; // reset so same file can be re-imported
+});
+
+// Dev panel — triple-click logo
+document.getElementById('logo-home').addEventListener('click', () => {
+  logoClickCount++;
+  if (logoClickTimer) clearTimeout(logoClickTimer);
+  logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 600);
+  if (logoClickCount >= 3) {
+    logoClickCount = 0;
+    const panel = document.getElementById('dev-panel');
+    panel.classList.toggle('visible');
+    if (panel.classList.contains('visible')) initDevPanel();
+  } else {
+    switchView('review');
+  }
+});
+
+// Dev panel actions
+document.getElementById('dev-reset-levels').addEventListener('click', () => {
+  state.cards.forEach(c => { c.level = 1; c.nextReview = Date.now(); });
+  saveState(); updateGroups(); updateDueCount(); renderScheduleChart();
+  showToast('All cards reset to Level 1', 'var(--accent)');
+});
+document.getElementById('dev-make-due').addEventListener('click', () => {
+  state.cards.forEach(c => { if (c.level < MAX_LEVEL) c.nextReview = Date.now(); });
+  saveState(); updateDueCount(); renderScheduleChart();
+  showToast('All cards due now', 'var(--accent)');
+});
+
+// Session summary back button
+document.getElementById('summary-review-btn').addEventListener('click', () => {
+  document.getElementById('session-summary').classList.remove('visible');
+  buildReviewQueue();
+  if (getDueCards().length > 0) nextReviewCard(); else showReviewEmpty();
+});
+
+// Confusables
+document.getElementById('start-confuse-btn').addEventListener('click', startConfuseDrill);
+document.getElementById('confuse-next-btn').addEventListener('click', nextConfuseCard);
+document.getElementById('confuse-retry-btn').addEventListener('click', startConfuseDrill);
+document.getElementById('confuse-back-btn').addEventListener('click', () => renderConfusablesSetup());
 
 // Review
 document.getElementById('submit-btn').addEventListener('click',()=>{
