@@ -242,7 +242,8 @@
   .sound-hint:hover { color:var(--accent); }
 
   /* ── Answer area ── */
-  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; min-height:130px; }
+  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; height:160px; }
+  .answer-area-spacer { flex:1; } /* absorbs remaining space so schedule chart stays put */
   .answer-prompt { font-size:0.68rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
   .answer-row { display:flex; gap:8px; width:100%; }
 
@@ -314,6 +315,8 @@
   .mc-btn.mc-wrong   { border-color:var(--wrong);   background:var(--wrong-bg);   color:var(--wrong); }
   .mc-btn.mc-reveal  { border-color:var(--correct); background:var(--correct-bg); color:var(--correct); opacity:0.6; }
   .mc-btn:disabled { cursor:default; }
+  .mc-key-hint { position:absolute; top:7px; left:10px; font-size:0.55rem; font-family:'Zen Kaku Gothic New',sans-serif; color:var(--muted); opacity:0.7; }
+  .mc-btn { position:relative; } /* needed for absolute key hint */
 
   .feedback { height:32px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:400; font-style:italic; font-family:'IM Fell English',serif; }
   .feedback.hidden { opacity:0; pointer-events:none; }
@@ -1110,7 +1113,10 @@ const INTERVALS = [0,4*3600000,8*3600000,86400000,172800000,604800000,1209600000
 const MAX_LEVEL = 7;
 const UNLOCK_THRESHOLD_LEVEL = 3;
 const UNLOCK_THRESHOLD_FRAC  = 0.8;
+// Storage key is FROZEN — never change this. Migrations handle shape changes.
 const STORAGE_KEY = 'katakana_srs_v2';
+// Legacy keys to migrate from
+const LEGACY_KEYS = ['katakana_srs_v1'];
 
 // Level names for toast
 const LEVEL_NAMES = ['New','Novice','Apprentice I','Apprentice II','Journeyman','Expert','Master','Burned'];
@@ -1134,24 +1140,35 @@ const CONFUSABLE_GROUPS = [
 // ─────────────────────────────────────────────
 //  LEVEL-UP SOUND (Web Audio API — no file needed)
 // ─────────────────────────────────────────────
-function playLevelUpSound() {
+function playLevelUpSound(level) {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Short ascending chime — three quick notes
-    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-    notes.forEach((freq, i) => {
+    // Each level has a distinct, increasingly satisfying sound
+    // L1: single soft ping  L2: two notes  L3: three-note chime
+    // L4: four-note run     L5: bright arpeggio  L6: rich chord  L7 (Burned): full fanfare
+    const patterns = {
+      1: { notes:[523.25],                        spacing:0,    vol:0.12, type:'sine',     dur:0.2  },
+      2: { notes:[523.25, 659.25],                spacing:0.09, vol:0.14, type:'sine',     dur:0.22 },
+      3: { notes:[523.25, 659.25, 783.99],        spacing:0.09, vol:0.16, type:'sine',     dur:0.24 },
+      4: { notes:[523.25, 659.25, 783.99, 1046.5],spacing:0.08, vol:0.16, type:'triangle', dur:0.22 },
+      5: { notes:[659.25, 783.99, 987.77, 1174.7],spacing:0.07, vol:0.17, type:'triangle', dur:0.22 },
+      6: { notes:[523.25, 659.25, 783.99, 1046.5, 1318.5], spacing:0.06, vol:0.17, type:'triangle', dur:0.28 },
+      7: { notes:[523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98], spacing:0.055, vol:0.18, type:'triangle', dur:0.3 },
+    };
+    const p = patterns[Math.min(level, 7)] || patterns[1];
+    p.notes.forEach((freq, i) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
       osc.frequency.value = freq;
-      osc.type = 'sine';
-      const t = ctx.currentTime + i * 0.1;
+      osc.type = p.type;
+      const t = ctx.currentTime + i * p.spacing;
       gain.gain.setValueAtTime(0, t);
-      gain.gain.linearRampToValueAtTime(0.18, t + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-      osc.start(t); osc.stop(t + 0.25);
+      gain.gain.linearRampToValueAtTime(p.vol, t + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + p.dur);
+      osc.start(t); osc.stop(t + p.dur);
     });
-  } catch(e) {} // fail silently if audio not available
+  } catch(e) {}
 }
 
 // ─────────────────────────────────────────────
@@ -1166,15 +1183,38 @@ function defaultState() {
     totalReviews: 0,
     totalCorrect: 0,
     learnedKana: [],
-    accuracyHistory: [] // [{date, correct, total}] — one entry per session
+    accuracyHistory: [],
+    sessionHistory: []  // [{date, correct, total, pct}] — real per-session accuracy
   };
 }
+function migrateState(s) {
+  // Add any fields introduced after v2 — never remove or rename existing fields
+  if (!s.accuracyHistory)  s.accuracyHistory  = [];
+  if (!s.learnedKana)      s.learnedKana      = [];
+  if (!s.unlockedGroups)   s.unlockedGroups   = [1];
+  if (s.totalReviews  === undefined) s.totalReviews  = 0;
+  if (s.totalCorrect  === undefined) s.totalCorrect  = 0;
+  if (!s.cards)            s.cards            = [];
+  // sessionCorrect added for per-session accuracy tracking
+  if (!s.sessionHistory)   s.sessionHistory   = []; // [{date, correct, total, pct}]
+  return s;
+}
 function loadState() {
-  try { const r = localStorage.getItem(STORAGE_KEY); if (r) {
-    const s = JSON.parse(r);
-    if (!s.accuracyHistory) s.accuracyHistory = [];
-    return s;
-  }} catch(e) {}
+  try {
+    // Try current key first
+    const r = localStorage.getItem(STORAGE_KEY);
+    if (r) return migrateState(JSON.parse(r));
+    // Try migrating from legacy keys
+    for (const key of LEGACY_KEYS) {
+      const old = localStorage.getItem(key);
+      if (old) {
+        const s = migrateState(JSON.parse(old));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); // save under new key
+        localStorage.removeItem(key); // clean up old key
+        return s;
+      }
+    }
+  } catch(e) {}
   return defaultState();
 }
 function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -1247,11 +1287,11 @@ function answerCard(card, correct) {
   state.totalReviews++;
   saveState();
   checkUnlocks();
-  // Fire level-up toast if card moved up a level
+  // Fire level-up toast and sound for all level increases
   if (correct && card.level > prevLevel && card.level <= MAX_LEVEL) {
     const name = LEVEL_NAMES[card.level] || `Level ${card.level}`;
     showToast(`${card.kana} → ${name} ✦`, 'var(--gold)');
-    if (card.level >= 3) playLevelUpSound(); // only sound for meaningful level-ups
+    playLevelUpSound(card.level); // all levels get sound, increasingly satisfying
   }
 }
 function checkUnlocks() {
@@ -1378,10 +1418,12 @@ let reviewAnswered = false;
 let unlockBannerTimer = null;
 
 // Session tracking
-let sessionSnapshot = {};  // cardId → level before session started
-let sessionCleared  = new Set(); // cardIds correctly answered this session
-let sessionTotal    = 0;   // unique cards that entered the queue
-let sessionWrapping = false; // true after Wrap Up pressed
+let sessionSnapshot  = {};      // cardId → level before session started
+let sessionCleared   = new Set(); // cardIds correctly answered this session (first-time)
+let sessionTotal     = 0;       // unique cards that entered the queue
+let sessionWrapping  = false;   // true after Wrap Up pressed
+let sessionAttempts  = 0;       // total answer attempts this session
+let sessionCorrectCount = 0;    // correct answers this session (for accuracy %)
 
 function cardId(card) { return card.kana + '|' + card.direction; }
 
@@ -1392,10 +1434,12 @@ function buildReviewQueue() {
   sessionSnapshot = {};
   due.forEach(c => { sessionSnapshot[cardId(c)] = c.level; });
 
-  reviewQueue    = due;
-  sessionTotal   = due.length;
-  sessionCleared = new Set();
-  sessionWrapping = false;
+  reviewQueue          = due;
+  sessionTotal         = due.length;
+  sessionCleared       = new Set();
+  sessionWrapping      = false;
+  sessionAttempts      = 0;
+  sessionCorrectCount  = 0;
 
   updateSessionBar();
   const bar = document.getElementById('session-bar');
@@ -1424,8 +1468,10 @@ function reinsertFailed(card) {
 
 function nextReviewCard() {
   reviewAnswered = false;
-  document.getElementById('answer').value = '';
-  document.getElementById('answer').className = '';
+  const answerInput = document.getElementById('answer');
+  answerInput.value = '';
+  answerInput.className = '';
+  answerInput.disabled = false;
   document.getElementById('flashcard').className = 'card';
   document.getElementById('mc-mode').innerHTML = '';
   document.getElementById('mc-next-btn').style.display = 'none';
@@ -1466,18 +1512,23 @@ function handleReviewResult(card, correct) {
   const id = cardId(card);
   answerCard(card, correct);
 
+  // Track raw per-session accuracy
+  sessionAttempts++;
+  if (correct) sessionCorrectCount++;
+
   if (correct) {
-    // Mark as cleared (first correct counts — duplicates in queue are ignored)
     if (!sessionCleared.has(id)) sessionCleared.add(id);
-    // Remove any duplicate of this card still sitting in queue
     reviewQueue = reviewQueue.filter(c => cardId(c) !== id);
   } else {
-    // Re-insert 2–3 cards later
     reinsertFailed(card);
   }
 
-  updateSessionBar();
+  // Disable input so user can't change their answer — must press Next
+  const answerInput = document.getElementById('answer');
+  answerInput.disabled = true;
   document.getElementById('submit-btn').textContent = 'NEXT →';
+
+  updateSessionBar();
   updateHeaderStats();
   updateGroups();
 }
@@ -1541,20 +1592,25 @@ function checkReviewAnswer() {
   const correct = input === card.romaji;
   document.getElementById('answer').className = correct ? 'correct' : 'wrong';
   document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
-  showReviewFeedback(correct, card);
+  showReviewFeedback(correct, card, input);
   if (correct) speak(card.kana);
   handleReviewResult(card, correct);
 }
 
-// Wrap Up — stop pulling new cards, finish only failed ones
+// Wrap Up — finish only cards that were attempted and failed, drop unstarted ones
 function wrapUpSession() {
-  if (sessionWrapping) return; // already wrapping
+  if (sessionWrapping) return;
   sessionWrapping = true;
-  // Purge any unvisited cards that haven't been failed
-  // Keep only cards already in queue (which are re-inserted fails)
-  // Remove cards that were never seen (no snapshot entry from a fail re-insert)
-  reviewQueue = reviewQueue.filter(c => !sessionCleared.has(cardId(c)));
-  // Deduplicate — only keep one copy of each uncleared card
+
+  // A card belongs in the wrap-up queue if:
+  // - it was attempted (has a snapshot entry) AND
+  // - it hasn't been cleared yet (still in the failed pool)
+  reviewQueue = reviewQueue.filter(c => {
+    const id = cardId(c);
+    return sessionSnapshot[id] !== undefined && !sessionCleared.has(id);
+  });
+
+  // Deduplicate — only one copy of each uncleared card
   const seen = new Set();
   reviewQueue = reviewQueue.filter(c => {
     const id = cardId(c);
@@ -1591,28 +1647,31 @@ function endSession() {
 
 // Session finished naturally (all cleared)
 function endSessionComplete() {
-  // Save accuracy to history
-  if (sessionTotal > 0) {
-    const sessionCorrect = sessionCleared.size; // proxy — cards cleared = correctly answered
-    state.accuracyHistory.push({
-      date: new Date().toISOString().slice(0,10),
-      correct: state.totalCorrect,
-      total: state.totalReviews
+  // Save real accuracy to history
+  if (sessionAttempts > 0) {
+    const pctVal = Math.round((sessionCorrectCount / sessionAttempts) * 100);
+    if (!state.sessionHistory) state.sessionHistory = [];
+    state.sessionHistory.push({
+      date:    new Date().toISOString().slice(0,10),
+      correct: sessionCorrectCount,
+      total:   sessionAttempts,
+      pct:     pctVal
     });
-    // Keep only last 20 sessions
-    if (state.accuracyHistory.length > 20) state.accuracyHistory.shift();
+    if (state.sessionHistory.length > 20) state.sessionHistory.shift();
+    // Keep old accuracyHistory in sync for backwards compat
+    state.accuracyHistory = state.sessionHistory;
     saveState();
   }
 
-  // Show session summary
-  const pct = sessionTotal > 0 ? Math.round((sessionCleared.size / sessionTotal) * 100) : 100;
+  // Show session summary with real accuracy
+  const pct = sessionAttempts > 0 ? Math.round((sessionCorrectCount / sessionAttempts) * 100) : 100;
   const pctEl = document.getElementById('summary-pct');
   pctEl.textContent = pct + '%';
   pctEl.className = 'summary-pct' + (pct >= 80 ? '' : pct >= 50 ? ' mid' : ' low');
   document.getElementById('summary-label').textContent =
     pct >= 80 ? 'Excellent session' : pct >= 50 ? 'Good effort' : 'Keep practising';
   document.getElementById('summary-detail').textContent =
-    `${sessionCleared.size} of ${sessionTotal} cards cleared`;
+    `${sessionCorrectCount} correct out of ${sessionAttempts} attempts · ${sessionCleared.size} of ${sessionTotal} cards cleared`;
   document.getElementById('session-summary').classList.add('visible');
 
   reviewQueue = []; reviewCard = null;
@@ -1623,17 +1682,21 @@ function endSessionComplete() {
   updateHeaderStats(); updateGroups(); renderScheduleChart();
 }
 
-function showReviewFeedback(correct,card) {
-  const el=document.getElementById('feedback');
-  el.className='feedback '+(correct?'correct':'wrong');
-  el.innerHTML=correct
-    ? ['Correct!','Nice!','Perfect!','正解！'][Math.floor(Math.random()*4)]
-    : `Not quite — <strong>${card.romaji}</strong> is <strong>${card.kana}</strong>`;
+function showReviewFeedback(correct, card, userInput) {
+  const el = document.getElementById('feedback');
+  el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
+  if (correct) {
+    el.innerHTML = ['Correct!', 'Nice!', 'Perfect!', '正解！'][Math.floor(Math.random() * 4)];
+  } else {
+    // Show what the correct answer actually is, not the user's input
+    el.innerHTML = `Not quite — <strong>${card.kana}</strong> is <em>${card.romaji}</em>`;
+  }
 }
 function hideReviewFeedback() {
-  const el=document.getElementById('feedback');
-  el.className='feedback hidden'; el.innerHTML='';
-  document.getElementById('submit-btn').textContent='CHECK';
+  const el = document.getElementById('feedback');
+  el.className = 'feedback hidden';
+  el.innerHTML = '';
+  document.getElementById('submit-btn').textContent = 'CHECK';
 }
 
 let nextDueTimer = null;
@@ -1683,16 +1746,16 @@ function showUnlockBanner(groupId) {
 // ─────────────────────────────────────────────
 function renderMC(card, containerEl, onSelect) {
   containerEl.innerHTML='';
-  // Use only learned chars as distractor pool so options feel fair
   const learnedPool = ALL_CHARS.filter(c => state.learnedKana.includes(c.kana));
   const distractors = getDistractors(card, learnedPool.length >= 4 ? learnedPool : ALL_CHARS);
   const options = [...distractors,{kana:card.kana,romaji:card.romaji}].sort(()=>Math.random()-0.5);
-  options.forEach(opt => {
-    const btn=document.createElement('button');
-    btn.className='mc-btn'+(opt.kana.length>1?' combo-opt':'');
-    btn.textContent=opt.kana;
-    btn.dataset.kana=opt.kana;
-    btn.addEventListener('click',()=>onSelect(btn,opt.kana));
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-btn' + (opt.kana.length > 1 ? ' combo-opt' : '');
+    btn.dataset.kana = opt.kana;
+    btn.dataset.mcIndex = i + 1; // 1-based for keyboard shortcut display
+    btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${opt.kana}`;
+    btn.addEventListener('click', () => onSelect(btn, opt.kana));
     containerEl.appendChild(btn);
   });
 }
@@ -1823,12 +1886,13 @@ function renderMCForQuiz(card) {
   const batchPool = learnBatch.map(c=>({kana:c.kana,romaji:c.romaji}));
   const distractors = getDistractors(card, batchPool.length >= 4 ? batchPool : ALL_CHARS);
   const options = [...distractors,{kana:card.kana,romaji:card.romaji}].sort(()=>Math.random()-0.5);
-  options.forEach(opt => {
-    const btn=document.createElement('button');
-    btn.className='mc-btn'+(opt.kana.length>1?' combo-opt':'');
-    btn.textContent=opt.kana;
-    btn.dataset.kana=opt.kana;
-    btn.addEventListener('click',()=>quizSelectOption(btn,opt.kana));
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-btn' + (opt.kana.length > 1 ? ' combo-opt' : '');
+    btn.dataset.kana = opt.kana;
+    btn.dataset.mcIndex = i + 1;
+    btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${opt.kana}`;
+    btn.addEventListener('click', () => quizSelectOption(btn, opt.kana));
     container.appendChild(btn);
   });
 }
@@ -2299,11 +2363,11 @@ function renderConfuseMC(options, labelFn, isCorrectFn, keyFn) {
   const grid = document.getElementById('confuse-mc');
   grid.innerHTML = '';
   const isKana = confuseCard.direction === 'romaji→kana';
-  options.forEach(opt => {
+  options.forEach((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = isKana ? 'mc-btn' : 'mc-btn';
+    btn.className = 'mc-btn';
     if (isKana) btn.style.fontFamily = "'Noto Sans JP', sans-serif";
-    btn.textContent = labelFn(opt);
+    btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${labelFn(opt)}`;
     btn.addEventListener('click', () => {
       if (confuseAnswered) { nextConfuseCard(); return; }
       confuseAnswered = true;
@@ -2311,7 +2375,8 @@ function renderConfuseMC(options, labelFn, isCorrectFn, keyFn) {
       if (correct) confuseCorrect++;
       grid.querySelectorAll('button').forEach(b => {
         b.disabled = true;
-        if (isCorrectFn({kana:b.textContent, romaji:b.textContent}) || b.textContent === (isKana ? confuseCard.kana : confuseCard.romaji)) {
+        const bLabel = b.querySelector('.mc-key-hint') ? b.textContent.slice(1) : b.textContent;
+        if (isCorrectFn({kana: bLabel, romaji: bLabel}) || bLabel === (isKana ? confuseCard.kana : confuseCard.romaji)) {
           if (!correct) b.classList.add('mc-reveal');
         }
       });
@@ -2484,11 +2549,34 @@ document.getElementById('quiz-submit-btn').addEventListener('click',()=>{
 document.getElementById('quiz-answer').addEventListener('keydown',e=>{if(e.key==='Enter')checkQuizAnswer();});
 document.getElementById('quiz-sound-btn').addEventListener('click',()=>{if(learnQuizCard)speak(learnQuizCard.kana);});
 
-// Global Enter to advance MC
-document.addEventListener('keydown',e=>{
-  if(e.key!=='Enter')return;
-  if(currentView==='review'&&reviewAnswered&&reviewCard?.direction==='romaji→kana')nextReviewCard();
-  if(currentView==='learn'&&learnQuizAnswered&&learnQuizCard?.direction==='romaji→kana')nextLearnQuizCard();
+// Global keyboard handling — Enter to advance, 1-4 for MC selection
+document.addEventListener('keydown', e => {
+  // Enter — advance after MC answer
+  if (e.key === 'Enter') {
+    if (currentView==='review' && reviewAnswered && reviewCard?.direction==='romaji→kana') nextReviewCard();
+    if (currentView==='learn'  && learnQuizAnswered && learnQuizCard?.direction==='romaji→kana') nextLearnQuizCard();
+    return;
+  }
+
+  // 1-4 — select MC option by keyboard
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 4) {
+    // Don't fire if user is typing in a text input
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+
+    if (currentView === 'review' && reviewCard?.direction === 'romaji→kana' && !reviewAnswered) {
+      const btns = document.querySelectorAll('#mc-mode .mc-btn:not(:disabled)');
+      if (btns[num - 1]) btns[num - 1].click();
+    }
+    if (currentView === 'learn' && learnQuizCard?.direction === 'romaji→kana' && !learnQuizAnswered) {
+      const btns = document.querySelectorAll('#quiz-mc-mode .mc-btn:not(:disabled)');
+      if (btns[num - 1]) btns[num - 1].click();
+    }
+    if (currentView === 'confusables' && !confuseAnswered) {
+      const btns = document.querySelectorAll('#confuse-mc .mc-btn:not(:disabled)');
+      if (btns[num - 1]) btns[num - 1].click();
+    }
+  }
 });
 
 // Results
