@@ -121,7 +121,7 @@
   .logo-dot { color: var(--muted); font-style: italic; }
 
   .header-right { display:flex; align-items:center; gap:12px; }
-  .stats-bar { display:flex; gap:20px; font-size:0.72rem; color:var(--muted); }
+  .stats-bar { display:flex; gap:20px; font-size:0.82rem; color:var(--muted); }
   .stat strong { color:var(--text2); font-weight:500; }
 
   /* Nav tabs */
@@ -135,10 +135,10 @@
   }
   .nav-tab {
     font-family: 'Zen Kaku Gothic New', sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     font-weight: 500;
     letter-spacing: 0.04em;
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 5px;
     border: none;
     background: transparent;
@@ -154,12 +154,17 @@
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 5px 9px;
+    width: 34px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     font-size: 0.9rem;
     line-height: 1;
     transition: background 0.15s, border-color 0.15s;
     color: var(--text2);
+    flex-shrink: 0;
   }
   .theme-toggle:hover { border-color: var(--accent); }
 
@@ -204,8 +209,8 @@
   .card.correct-flash { border-color: var(--correct); box-shadow: 0 0 0 3px color-mix(in srgb, var(--correct) 15%, transparent), 0 2px 12px var(--shadow); }
   .card.wrong-flash   { border-color: var(--wrong);   box-shadow: 0 0 0 3px color-mix(in srgb, var(--wrong) 15%, transparent),   0 2px 12px var(--shadow); }
 
-  .card-direction { position:absolute; top:14px; left:18px; font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
-  .card-level { position:absolute; top:14px; right:18px; font-size:0.6rem; color:var(--muted); }
+  .card-direction { position:absolute; top:14px; left:18px; font-size:0.72rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; }
+  .card-level { position:absolute; top:14px; right:18px; font-size:0.72rem; color:var(--muted); }
   .card-level-dots { display:flex; gap:4px; margin-top:3px; justify-content:flex-end; }
   .level-dot { width:5px; height:5px; border-radius:50%; background:var(--border2); }
   .level-dot.filled { background:var(--accent); }
@@ -238,13 +243,12 @@
     color: var(--accent);
     letter-spacing: 0.04em;
   }
-  .sound-hint { font-size:0.65rem; color:var(--muted); display:flex; align-items:center; gap:5px; cursor:pointer; margin-top:2px; }
+  .sound-hint { font-size:0.78rem; color:var(--muted); display:flex; align-items:center; gap:5px; cursor:pointer; margin-top:2px; }
   .sound-hint:hover { color:var(--accent); }
 
   /* ── Answer area ── */
-  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; height:160px; }
-  .answer-area-spacer { flex:1; } /* absorbs remaining space so schedule chart stays put */
-  .answer-prompt { font-size:0.68rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+  .answer-area { width:100%; max-width:440px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .answer-prompt { font-size:0.82rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; }
   .answer-row { display:flex; gap:8px; width:100%; }
 
   input#answer, input#quiz-answer {
@@ -254,9 +258,9 @@
     border-radius: 9px;
     color: var(--text);
     font-family: 'IM Fell English', serif;
-    font-size: 1.15rem;
+    font-size: 1.3rem;
     font-style: italic;
-    padding: 12px 16px;
+    padding: 13px 18px;
     outline: none;
     transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     letter-spacing: 0.04em;
@@ -279,9 +283,9 @@
     color: #fff;
     border: none;
     border-radius: 9px;
-    padding: 12px 20px;
+    padding: 13px 22px;
     font-family: 'Zen Kaku Gothic New', sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     font-weight: 500;
     letter-spacing: 0.08em;
     cursor: pointer;
@@ -299,9 +303,9 @@
     border-radius: 11px;
     color: var(--text);
     font-family: 'Noto Serif JP', serif;
-    font-size: 2.2rem;
+    font-size: 2.6rem;
     font-weight: 300;
-    padding: 16px 10px;
+    padding: 20px 10px;
     cursor: pointer;
     transition: background 0.12s, border-color 0.12s, transform 0.1s, box-shadow 0.12s;
     text-align: center;
@@ -318,7 +322,22 @@
   .mc-key-hint { position:absolute; top:7px; left:10px; font-size:0.55rem; font-family:'Zen Kaku Gothic New',sans-serif; color:var(--muted); opacity:0.7; }
   .mc-btn { position:relative; } /* needed for absolute key hint */
 
-  .feedback { height:32px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:400; font-style:italic; font-family:'IM Fell English',serif; }
+  .feedback {
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 400;
+    font-style: italic;
+    font-family: 'IM Fell English', serif;
+    letter-spacing: 0.02em;
+    text-align: center;
+    padding: 0 12px;
+  }
   .feedback.hidden { opacity:0; pointer-events:none; }
   .feedback.correct { color:var(--correct); }
   .feedback.wrong   { color:var(--wrong); }
@@ -349,16 +368,16 @@
   .new-badge { background:var(--correct); }
 
   /* ── Queue info ── */
-  .queue-info { font-size:0.68rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; text-align:center; }
+  .queue-info { font-size:0.82rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; text-align:center; }
   .queue-info span { color:var(--text2); font-weight:500; }
 
   /* ── Empty states ── */
   .empty-state { text-align:center; padding:50px 20px; color:var(--muted); display:none; flex-direction:column; align-items:center; gap:12px; }
   .empty-state.visible { display:flex; }
   .empty-kana { font-family:'Noto Serif JP',serif; font-size:3rem; font-weight:300; opacity:0.2; }
-  .empty-title { font-family:'IM Fell English',serif; font-size:1.1rem; color:var(--text2); }
-  .empty-sub { font-size:0.78rem; line-height:1.7; }
-  .next-due-label { font-size:0.7rem; color:var(--accent); font-style:italic; }
+  .empty-title { font-family:'IM Fell English',serif; font-size:1.3rem; color:var(--text2); }
+  .empty-sub { font-size:0.9rem; line-height:1.8; }
+  .next-due-label { font-size:0.85rem; color:var(--accent); font-style:italic; }
   .goto-learn-btn { margin-top:6px; background:var(--accent); color:#fff; border:none; border-radius:8px; padding:10px 22px; font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.8rem; font-weight:500; letter-spacing:0.05em; cursor:pointer; transition:background 0.15s; }
   .goto-learn-btn:hover { background:var(--accent2); }
 
@@ -610,11 +629,11 @@
   .ref-char-card:hover .ref-romaji { color:var(--accent); }
 
   /* ══ STATS VIEW ══ */
-  .section-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.65rem; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .section-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
   .stat-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
   .stat-tile { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 12px; text-align:center; box-shadow:0 1px 4px var(--shadow); }
-  .stat-tile-value { font-family:'IM Fell English',serif; font-size:2rem; color:var(--text); line-height:1; }
-  .stat-tile-label { font-size:0.6rem; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; margin-top:5px; }
+  .stat-tile-value { font-family:'IM Fell English',serif; font-size:2.2rem; color:var(--text); line-height:1; }
+  .stat-tile-label { font-size:0.72rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-top:5px; }
   .stat-tile.accent-tile .stat-tile-value { color:var(--accent); }
   .stat-tile.correct-tile .stat-tile-value { color:var(--correct); }
   .stat-tile.gold-tile .stat-tile-value { color:var(--gold); }
@@ -807,6 +826,8 @@
           </div>
         </div>
 
+        <div class="feedback hidden" id="quiz-feedback"></div>
+
         <div class="answer-area">
           <div class="answer-prompt" id="quiz-answer-prompt"></div>
           <div class="answer-row" id="quiz-type-mode">
@@ -816,7 +837,6 @@
           <div class="mc-grid" id="quiz-mc-mode" style="display:none"></div>
           <button class="mc-next-btn" id="quiz-mc-next-btn" style="display:none">Next →</button>
         </div>
-        <div class="feedback hidden" id="quiz-feedback"></div>
       </div>
     </div>
 
@@ -902,6 +922,8 @@
         </div>
       </div>
 
+      <div class="feedback hidden" id="feedback"></div>
+
       <div class="answer-area">
         <div class="answer-prompt" id="answer-prompt">type the romaji</div>
         <div class="answer-row" id="type-mode">
@@ -911,7 +933,6 @@
         <div class="mc-grid" id="mc-mode" style="display:none"></div>
         <button class="mc-next-btn" id="mc-next-btn" style="display:none">Next →</button>
       </div>
-      <div class="feedback hidden" id="feedback"></div>
     </div>
 
     <div class="empty-state" id="empty-state">
@@ -2549,19 +2570,57 @@ document.getElementById('quiz-submit-btn').addEventListener('click',()=>{
 document.getElementById('quiz-answer').addEventListener('keydown',e=>{if(e.key==='Enter')checkQuizAnswer();});
 document.getElementById('quiz-sound-btn').addEventListener('click',()=>{if(learnQuizCard)speak(learnQuizCard.kana);});
 
-// Global keyboard handling — Enter to advance, 1-4 for MC selection
+// Global keyboard handling — Enter to advance everywhere, 1-4 for MC
 document.addEventListener('keydown', e => {
-  // Enter — advance after MC answer
+
   if (e.key === 'Enter') {
-    if (currentView==='review' && reviewAnswered && reviewCard?.direction==='romaji→kana') nextReviewCard();
-    if (currentView==='learn'  && learnQuizAnswered && learnQuizCard?.direction==='romaji→kana') nextLearnQuizCard();
+    const active = document.activeElement;
+    const inInput = active && active.tagName === 'INPUT' && !active.disabled;
+
+    if (currentView === 'review') {
+      if (reviewAnswered) {
+        // After any answered card — advance to next
+        nextReviewCard();
+      } else if (reviewCard?.direction === 'kana→romaji' && inInput) {
+        // Typed answer — submit handled by input keydown, skip here to avoid double-fire
+      }
+      // Session summary screen — Enter goes back to review
+      const summary = document.getElementById('session-summary');
+      if (summary.classList.contains('visible')) {
+        document.getElementById('summary-review-btn').click();
+      }
+    }
+
+    if (currentView === 'learn') {
+      // Intro screen — Enter advances or starts quiz
+      const introScreen = document.getElementById('learn-intro-screen');
+      if (introScreen.style.display !== 'none') {
+        document.getElementById('learn-next-btn').click();
+        return;
+      }
+      // Quiz — advance after MC answer
+      if (learnQuizAnswered) {
+        nextLearnQuizCard();
+        return;
+      }
+      // Results screen — Enter goes to review
+      const resultsScreen = document.getElementById('learn-results-screen');
+      if (resultsScreen.style.display !== 'none') {
+        document.getElementById('results-to-review-btn').click();
+        return;
+      }
+    }
+
+    if (currentView === 'confusables') {
+      if (confuseAnswered) nextConfuseCard();
+    }
+
     return;
   }
 
-  // 1-4 — select MC option by keyboard
+  // 1-4 — select MC option (not when typing in an input)
   const num = parseInt(e.key);
   if (num >= 1 && num <= 4) {
-    // Don't fire if user is typing in a text input
     if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
     if (currentView === 'review' && reviewCard?.direction === 'romaji→kana' && !reviewAnswered) {
