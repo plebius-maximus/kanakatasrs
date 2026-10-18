@@ -121,8 +121,28 @@
   .logo-dot { color: var(--muted); font-style: italic; }
 
   .header-right { display:flex; align-items:center; gap:12px; }
-  .stats-bar { display:flex; gap:20px; font-size:0.82rem; color:var(--muted); }
-  .stat strong { color:var(--text2); font-weight:500; }
+  .stats-bar { display:flex; gap:8px; font-size:0.78rem; }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .stat strong {
+    color: var(--text);
+    font-weight: 600;
+    font-family: 'IM Fell English', serif;
+    font-size: 1rem;
+  }
+  .stat-icon {
+    font-size: 0.75rem;
+    opacity: 0.7;
+  }
 
   /* Nav tabs */
   .nav-tabs {
@@ -722,8 +742,8 @@
     </div>
     <div class="header-right">
       <div class="stats-bar">
-        <div class="stat">Due: <strong id="total-reviews">0</strong></div>
-        <div class="stat">Learned: <strong id="learned-count">0</strong> chars</div>
+        <div class="stat"><span class="stat-icon">◷</span> Due <strong id="total-reviews">0</strong></div>
+        <div class="stat"><span class="stat-icon">✦</span> Learned <strong id="learned-count">0</strong></div>
       </div>
       <nav class="nav-tabs">
         <button class="nav-tab" data-view="learn">Learn</button>
@@ -1130,7 +1150,19 @@ const ALL_CHARS = [];
 { const seen = new Set();
   GROUPS.forEach(g => g.chars.forEach(c => { if (!seen.has(c.kana)) { seen.add(c.kana); ALL_CHARS.push(c); }})); }
 
-const INTERVALS = [0,4*3600000,8*3600000,86400000,172800000,604800000,1209600000,Infinity];
+// SRS intervals based on Cepeda et al. (2008) and SM-2 research:
+// First review at 4h (same-session reinforcement), then 1d, 3d, 7d, 14d, 30d
+// Research shows 1→3→7→14→28 day pattern gives best long-term retention
+const INTERVALS = [
+  0,                        // L0 — New, due immediately
+  4   * 3600000,            // L1 — 4 hours (same-day reinforcement)
+  1   * 86400000,           // L2 — 1 day
+  3   * 86400000,           // L3 — 3 days
+  7   * 86400000,           // L4 — 1 week
+  14  * 86400000,           // L5 — 2 weeks
+  30  * 86400000,           // L6 — 1 month
+  Infinity                  // L7 — Burned
+];
 const MAX_LEVEL = 7;
 const UNLOCK_THRESHOLD_LEVEL = 3;
 const UNLOCK_THRESHOLD_FRAC  = 0.8;
@@ -1496,6 +1528,9 @@ function nextReviewCard() {
   document.getElementById('flashcard').className = 'card';
   document.getElementById('mc-mode').innerHTML = '';
   document.getElementById('mc-next-btn').style.display = 'none';
+  // Remove wrong-answer reveal if present
+  const reveal = document.getElementById('wrong-reveal');
+  if (reveal) reveal.remove();
   hideReviewFeedback();
 
   // If wrapping: only continue if there are failed cards still in queue
@@ -1614,7 +1649,22 @@ function checkReviewAnswer() {
   document.getElementById('answer').className = correct ? 'correct' : 'wrong';
   document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
   showReviewFeedback(correct, card, input);
-  if (correct) speak(card.kana);
+  if (correct) {
+    speak(card.kana);
+  } else {
+    // On wrong typed answer, reveal the correct romaji below the kana on the card
+    // so the user can't miss what the answer should have been
+    const revealId = 'wrong-reveal';
+    let reveal = document.getElementById(revealId);
+    if (!reveal) {
+      reveal = document.createElement('div');
+      reveal.id = revealId;
+      reveal.style.cssText = 'font-family:"IM Fell English",serif;font-size:1.4rem;font-style:italic;color:var(--wrong);margin-top:6px;';
+      document.getElementById('card-main').insertAdjacentElement('afterend', reveal);
+    }
+    reveal.textContent = card.romaji;
+    speak(card.kana); // play sound on wrong too so they hear it
+  }
   handleReviewResult(card, correct);
 }
 
@@ -1709,8 +1759,8 @@ function showReviewFeedback(correct, card, userInput) {
   if (correct) {
     el.innerHTML = ['Correct!', 'Nice!', 'Perfect!', '正解！'][Math.floor(Math.random() * 4)];
   } else {
-    // Show what the correct answer actually is, not the user's input
-    el.innerHTML = `Not quite — <strong>${card.kana}</strong> is <em>${card.romaji}</em>`;
+    // Clear format: kana — romaji, with a real space on both sides of "is"
+    el.innerHTML = `Not quite &mdash; <strong>${card.kana}</strong> is <em>${card.romaji}</em>`;
   }
 }
 function hideReviewFeedback() {
