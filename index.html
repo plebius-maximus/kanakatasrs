@@ -648,6 +648,20 @@
   .ref-romaji { font-size:0.6rem; color:var(--muted); margin-top:4px; font-style:italic; font-family:'IM Fell English',serif; }
   .ref-char-card:hover .ref-romaji { color:var(--accent); }
 
+  /* ── Word card styles ── */
+  .card-english-label { font-family:'IM Fell English',serif; font-size:1rem; font-style:italic; color:var(--muted); letter-spacing:0.03em; margin-top:2px; }
+  .word-card-main { font-family:'Noto Sans JP',sans-serif !important; font-size:3.2rem !important; letter-spacing:0.05em; }
+  .word-mc-btn { font-family:'Noto Sans JP',sans-serif !important; font-size:1.4rem !important; padding:14px 10px !important; }
+
+  /* ── Words study grid ── */
+  .ref-word-card { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:10px 10px 8px; text-align:center; cursor:pointer; transition:border-color 0.15s,transform 0.1s,box-shadow 0.15s; box-shadow:0 1px 3px var(--shadow); }
+  .ref-word-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 10px var(--shadow); }
+  .ref-word-card.not-learned { opacity:0.2; pointer-events:none; }
+  .ref-word-kana { font-family:'Noto Sans JP',sans-serif; font-size:1.2rem; font-weight:300; }
+  .ref-word-english { font-size:0.65rem; color:var(--muted); margin-top:3px; font-style:italic; font-family:'IM Fell English',serif; }
+  .ref-word-reading { font-size:0.58rem; color:var(--border2); margin-top:1px; }
+  .ref-chars-grid.words-grid { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); }
+
   /* ══ STATS VIEW ══ */
   .section-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.78rem; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
   .stat-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
@@ -802,6 +816,7 @@
           <div class="card" id="learn-card">
             <div class="card-main" id="learn-card-kana"></div>
             <div class="card-romaji-label" id="learn-card-romaji"></div>
+            <div class="card-english-label" id="learn-card-english" style="display:none"></div>
             <div class="sound-hint" id="learn-sound-btn">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
@@ -980,7 +995,10 @@
   <!-- ══════════════ STUDY (REFERENCE) VIEW ══════════════ -->
   <div class="view" id="view-studyref">
     <div class="study-ref-controls">
-      <div class="study-ref-title">Learned Characters</div>
+      <div class="schedule-toggle">
+        <button class="schedule-toggle-btn active" id="ref-kana-btn">Characters</button>
+        <button class="schedule-toggle-btn" id="ref-words-btn">Words</button>
+      </div>
       <button class="show-all-btn" id="show-all-btn">Show all</button>
     </div>
     <div id="ref-content"></div>
@@ -1191,6 +1209,118 @@ const CONFUSABLE_GROUPS = [
 ];
 
 // ─────────────────────────────────────────────
+//  LOANWORD DATASET
+//  Each word uses only kana from its group and earlier groups.
+//  Groups 1–9 map to the same group IDs as GROUPS.
+// ─────────────────────────────────────────────
+const LOANWORDS = {
+  1: [ // Vowels + K (ア イ ウ エ オ カ キ ク ケ)
+    { word:'アイス',   reading:'aisu',    english:'ice cream / iced' },
+    { word:'エコ',     reading:'eko',     english:'eco / ecological' },
+    { word:'カーキ',   reading:'kaaki',   english:'khaki' },
+    { word:'キウイ',   reading:'kiui',    english:'kiwi' },
+    { word:'ケーキ',   reading:'keeki',   english:'cake' },
+    { word:'クイズ',   reading:'kuizu',   english:'quiz' },
+    { word:'アイコン', reading:'aikon',   english:'icon' },
+    { word:'オーク',   reading:'ooku',    english:'oak' },
+  ],
+  2: [ // + コ サ シ ス セ ソ タ チ ツ
+    { word:'コーヒー', reading:'koohii',  english:'coffee' },
+    { word:'タクシー', reading:'takushii',english:'taxi' },
+    { word:'スキー',   reading:'sukii',   english:'skiing' },
+    { word:'チーズ',   reading:'chiizu',  english:'cheese' },
+    { word:'ソース',   reading:'soosu',   english:'sauce' },
+    { word:'セーター', reading:'seetaa',  english:'sweater' },
+    { word:'コスト',   reading:'kosuto',  english:'cost' },
+    { word:'ツアー',   reading:'tsuaa',   english:'tour' },
+    { word:'スーツ',   reading:'suutsu',  english:'suit' },
+    { word:'サイズ',   reading:'saizu',   english:'size' },
+  ],
+  3: [ // + テ ト ナ ニ ヌ ネ ノ ハ ヒ
+    { word:'テスト',   reading:'tesuto',  english:'test / exam' },
+    { word:'ノート',   reading:'nooto',   english:'notebook' },
+    { word:'ハイキング',reading:'haikingu',english:'hiking' },
+    { word:'テニス',   reading:'tenisu',  english:'tennis' },
+    { word:'ネット',   reading:'netto',   english:'net / internet' },
+    { word:'ヒント',   reading:'hinto',   english:'hint' },
+    { word:'トースト', reading:'toosuto', english:'toast' },
+    { word:'ナイフ',   reading:'naifu',   english:'knife' },
+    { word:'ハンサム', reading:'hansamu', english:'handsome' },
+  ],
+  4: [ // + フ ヘ ホ マ ミ ム メ モ ヤ
+    { word:'マフラー', reading:'mafuraa',  english:'scarf / muffler' },
+    { word:'ホーム',   reading:'hoomu',    english:'platform / home' },
+    { word:'メモ',     reading:'memo',     english:'memo / note' },
+    { word:'フォーム', reading:'foomu',    english:'form / foam' },
+    { word:'ミート',   reading:'miito',    english:'meat' },
+    { word:'ヘルメット',reading:'herumetto',english:'helmet' },
+    { word:'モデム',   reading:'modemu',   english:'modem' },
+    { word:'マスク',   reading:'masuku',   english:'mask' },
+    { word:'ヤフー',   reading:'yafuu',    english:'Yahoo' },
+  ],
+  5: [ // + ユ ヨ ラ リ ル レ ロ ワ ヲ ン
+    { word:'ラーメン', reading:'raamen',   english:'ramen noodles' },
+    { word:'レモン',   reading:'remon',    english:'lemon' },
+    { word:'ワイン',   reading:'wain',     english:'wine' },
+    { word:'ロール',   reading:'rooru',    english:'roll' },
+    { word:'ユーモア', reading:'yuumoa',   english:'humour / humor' },
+    { word:'レンタル', reading:'rentaru',  english:'rental' },
+    { word:'ライン',   reading:'rain',     english:'line' },
+    { word:'ロマン',   reading:'roman',    english:'romance / roman' },
+    { word:'ワーク',   reading:'waaku',    english:'work' },
+    { word:'マラソン', reading:'marason',  english:'marathon' },
+  ],
+  6: [ // Dakuten G+Z  (ガ ギ グ ゲ ゴ ザ ジ ズ ゼ ゾ)
+    { word:'ガス',     reading:'gasu',     english:'gas' },
+    { word:'ゲーム',   reading:'geemu',    english:'game' },
+    { word:'ジュース', reading:'juusu',    english:'juice' },
+    { word:'ガイド',   reading:'gaido',    english:'guide' },
+    { word:'ゾーン',   reading:'zoon',     english:'zone' },
+    { word:'ジーンズ', reading:'jiinzu',   english:'jeans' },
+    { word:'ゴール',   reading:'gooru',    english:'goal' },
+    { word:'グラス',   reading:'gurasu',   english:'glass' },
+  ],
+  7: [ // Dakuten D+B+P (ダ ヂ ヅ デ ド バ ビ ブ ベ ボ パ ピ プ ペ ポ)
+    { word:'バス',     reading:'basu',     english:'bus' },
+    { word:'パソコン', reading:'pasokon',  english:'personal computer' },
+    { word:'ビール',   reading:'biiru',    english:'beer' },
+    { word:'ドア',     reading:'doa',      english:'door' },
+    { word:'パン',     reading:'pan',      english:'bread' },
+    { word:'ベッド',   reading:'beddo',    english:'bed' },
+    { word:'ボール',   reading:'booru',    english:'ball' },
+    { word:'デザイン', reading:'dezain',   english:'design' },
+    { word:'プール',   reading:'puuru',    english:'pool' },
+    { word:'バッグ',   reading:'baggu',    english:'bag' },
+    { word:'ピアノ',   reading:'piano',    english:'piano' },
+    { word:'ドラマ',   reading:'dorama',   english:'drama / TV drama' },
+  ],
+  8: [ // Combos K+S+T (キャ キュ キョ etc.)
+    { word:'キャンプ', reading:'kyanpu',   english:'camping' },
+    { word:'ショック', reading:'shokku',   english:'shock' },
+    { word:'チャンス', reading:'chansu',   english:'chance' },
+    { word:'ショー',   reading:'shoo',     english:'show' },
+    { word:'キャラ',   reading:'kyara',    english:'character / chara' },
+    { word:'チョコ',   reading:'choko',    english:'chocolate' },
+    { word:'ショッピング',reading:'shoppingu',english:'shopping' },
+    { word:'キャッチ', reading:'kyatchi',  english:'catch' },
+  ],
+  9: [ // Combos R+Voiced (リャ ギャ ジャ ビャ ピャ etc.)
+    { word:'ジャム',   reading:'jamu',     english:'jam' },
+    { word:'ジャズ',   reading:'jazu',     english:'jazz' },
+    { word:'ジャケット',reading:'jaketto', english:'jacket' },
+    { word:'ジャンル', reading:'janru',    english:'genre' },
+    { word:'ジュニア', reading:'junia',    english:'junior' },
+    { word:'ジョーク', reading:'jooku',    english:'joke' },
+    { word:'ギャップ', reading:'gyappu',   english:'gap' },
+    { word:'ギャラ',   reading:'gyara',    english:'fee / guarantee' },
+  ],
+};
+
+// Unlock threshold for loanwords — higher than kana group unlock
+const WORD_UNLOCK_LEVEL = 4;    // cards must reach this level
+const WORD_UNLOCK_FRAC  = 0.70; // 70% of kana→romaji cards in the group
+
+// ─────────────────────────────────────────────
 //  LEVEL-UP SOUND (Web Audio API — no file needed)
 // ─────────────────────────────────────────────
 function playLevelUpSound(level) {
@@ -1236,20 +1366,24 @@ function defaultState() {
     totalReviews: 0,
     totalCorrect: 0,
     learnedKana: [],
+    learnedWords: [],       // word strings that have been through Learn
+    unlockedWordGroups: [], // group IDs where loanwords are unlocked
     accuracyHistory: [],
-    sessionHistory: []  // [{date, correct, total, pct}] — real per-session accuracy
+    sessionHistory: []
   };
 }
 function migrateState(s) {
-  // Add any fields introduced after v2 — never remove or rename existing fields
-  if (!s.accuracyHistory)  s.accuracyHistory  = [];
-  if (!s.learnedKana)      s.learnedKana      = [];
-  if (!s.unlockedGroups)   s.unlockedGroups   = [1];
+  if (!s.accuracyHistory)    s.accuracyHistory    = [];
+  if (!s.learnedKana)        s.learnedKana        = [];
+  if (!s.learnedWords)       s.learnedWords       = [];
+  if (!s.unlockedWordGroups) s.unlockedWordGroups = [];
+  if (!s.unlockedGroups)     s.unlockedGroups     = [1];
   if (s.totalReviews  === undefined) s.totalReviews  = 0;
   if (s.totalCorrect  === undefined) s.totalCorrect  = 0;
-  if (!s.cards)            s.cards            = [];
-  // sessionCorrect added for per-session accuracy tracking
-  if (!s.sessionHistory)   s.sessionHistory   = []; // [{date, correct, total, pct}]
+  if (!s.cards)              s.cards              = [];
+  if (!s.sessionHistory)     s.sessionHistory     = [];
+  // Migrate old cards missing type field
+  s.cards.forEach(c => { if (!c.type) c.type = 'kana'; });
   return s;
 }
 function loadState() {
@@ -1343,9 +1477,12 @@ function answerCard(card, correct) {
   // Fire level-up toast and sound for all level increases
   if (correct && card.level > prevLevel && card.level <= MAX_LEVEL) {
     const name = LEVEL_NAMES[card.level] || `Level ${card.level}`;
-    showToast(`${card.kana} → ${name} ✦`, 'var(--gold)');
-    playLevelUpSound(card.level); // all levels get sound, increasingly satisfying
+    const label = card.type === 'word' ? card.word : card.kana;
+    showToast(`${label} → ${name} ✦`, 'var(--gold)');
+    playLevelUpSound(card.level);
   }
+  // Check word unlocks whenever a kana card is answered
+  if (card.type === 'kana') checkWordUnlocks();
 }
 function checkUnlocks() {
   GROUPS.forEach((group, idx) => {
@@ -1369,28 +1506,75 @@ function unlockGroup(groupId) {
   showUnlockBanner(groupId);
 }
 
-// Add a batch of chars to SRS (called after Learn quiz passes)
+// Check if any group has reached the loanword unlock threshold
+function checkWordUnlocks() {
+  GROUPS.forEach(group => {
+    if (state.unlockedWordGroups.includes(group.id)) return;
+    if (!LOANWORDS[group.id]) return;
+    const kanaCards = state.cards.filter(c => c.type === 'kana' && c.group === group.id && c.direction === 'kana→romaji');
+    if (!kanaCards.length) return;
+    const qualified = kanaCards.filter(c => c.level >= WORD_UNLOCK_LEVEL);
+    if (qualified.length / kanaCards.length >= WORD_UNLOCK_FRAC) {
+      state.unlockedWordGroups.push(group.id);
+      saveState();
+      showUnlockBanner(`Group ${group.id} words`);
+      updateGroups();
+    }
+  });
+}
+
+// Commit learned words to SRS after a Learn session
+function commitLearnedWords(words) {
+  words.forEach(w => {
+    if (state.learnedWords.includes(w.word)) return;
+    state.learnedWords.push(w.word);
+    const now = Date.now();
+    state.cards.push({ type:'word', word:w.word, reading:w.reading, english:w.english, group:w.group, direction:'word→english', level:1, nextReview:now + INTERVALS[1] });
+    state.cards.push({ type:'word', word:w.word, reading:w.reading, english:w.english, group:w.group, direction:'english→word', level:1, nextReview:now + INTERVALS[1] + 120000 });
+  });
+  saveState();
+}
+
+// Add a batch of kana chars to SRS after Learn quiz
 function commitLearnedBatch(chars) {
   chars.forEach(c => {
-    if (state.learnedKana.includes(c.kana)) return; // already in system
+    if (state.learnedKana.includes(c.kana)) return;
     state.learnedKana.push(c.kana);
     const groupId = GROUPS.find(g => g.chars.some(gc => gc.kana === c.kana))?.id || 1;
-    // Start at level 1 (not 0) — they've been introduced
-    state.cards.push({kana:c.kana,romaji:c.romaji,group:groupId,direction:'kana→romaji',level:1,nextReview:Date.now()+INTERVALS[1]});
-    state.cards.push({kana:c.kana,romaji:c.romaji,group:groupId,direction:'romaji→kana',level:1,nextReview:Date.now()+INTERVALS[1]+60000});
+    state.cards.push({type:'kana', kana:c.kana, romaji:c.romaji, group:groupId, direction:'kana→romaji', level:1, nextReview:Date.now()+INTERVALS[1]});
+    state.cards.push({type:'kana', kana:c.kana, romaji:c.romaji, group:groupId, direction:'romaji→kana', level:1, nextReview:Date.now()+INTERVALS[1]+60000});
   });
   saveState();
   checkUnlocks();
+  checkWordUnlocks();
 }
 
+// Get all unlearned kana characters available to learn
 function getNewChars() {
-  // All chars from unlocked groups that haven't been learned yet
   const result = [];
   GROUPS.forEach(g => {
     if (!state.unlockedGroups.includes(g.id)) return;
-    g.chars.forEach(c => { if (!state.learnedKana.includes(c.kana)) result.push(c); });
+    g.chars.forEach(c => { if (!state.learnedKana.includes(c.kana)) result.push({...c, itemType:'kana'}); });
   });
   return result;
+}
+
+// Get all unlearned loanwords available to learn
+function getNewWords() {
+  const result = [];
+  GROUPS.forEach(g => {
+    if (!state.unlockedWordGroups.includes(g.id)) return;
+    if (!LOANWORDS[g.id]) return;
+    LOANWORDS[g.id].forEach(w => {
+      if (!state.learnedWords.includes(w.word)) result.push({...w, group:g.id, itemType:'word'});
+    });
+  });
+  return result;
+}
+
+// Combined: kana first, then words — used by Learn setup
+function getNewItems() {
+  return [...getNewChars(), ...getNewWords()];
 }
 
 // ─────────────────────────────────────────────
@@ -1478,7 +1662,10 @@ let sessionWrapping  = false;   // true after Wrap Up pressed
 let sessionAttempts  = 0;       // total answer attempts this session
 let sessionCorrectCount = 0;    // correct answers this session (for accuracy %)
 
-function cardId(card) { return card.kana + '|' + card.direction; }
+function cardId(card) {
+  const key = card.type === 'word' ? card.word : card.kana;
+  return key + '|' + card.direction;
+}
 
 function buildReviewQueue() {
   const due = getDueCards().sort(() => Math.random() - 0.5);
@@ -1593,7 +1780,30 @@ function renderReviewCard(card) {
   const dir    = document.getElementById('card-direction');
   const main   = document.getElementById('card-main');
   const prompt = document.getElementById('answer-prompt');
-  if (card.direction === 'kana→romaji') {
+
+  if (card.type === 'word') {
+    if (card.direction === 'word→english') {
+      dir.textContent    = 'katakana → english';
+      main.className     = 'card-main word-card-main';
+      main.textContent   = card.word;
+      prompt.textContent = 'type the English meaning';
+      document.getElementById('type-mode').style.display = 'flex';
+      document.getElementById('mc-mode').style.display   = 'none';
+      document.getElementById('answer').value = '';
+      document.getElementById('answer').className = '';
+      document.getElementById('sound-btn').style.visibility = 'hidden';
+      document.getElementById('answer').focus();
+    } else {
+      dir.textContent    = 'english → katakana';
+      main.className     = 'card-main romaji-prompt';
+      main.textContent   = card.english;
+      prompt.textContent = 'choose the katakana word';
+      document.getElementById('type-mode').style.display = 'none';
+      document.getElementById('mc-mode').style.display   = 'grid';
+      document.getElementById('sound-btn').style.visibility = 'visible';
+      renderWordMC(card, document.getElementById('mc-mode'), (btn, word) => reviewSelectOption(btn, word, card));
+    }
+  } else if (card.direction === 'kana→romaji') {
     dir.textContent    = 'katakana → romaji';
     main.className     = 'card-main' + (card.kana.length > 1 ? ' combo' : '');
     main.textContent   = card.kana;
@@ -1614,6 +1824,7 @@ function renderReviewCard(card) {
     document.getElementById('sound-btn').style.visibility = 'visible';
     renderMC(card, document.getElementById('mc-mode'), (btn, kana) => reviewSelectOption(btn, kana, card));
   }
+
   const dots = document.getElementById('level-dots');
   dots.innerHTML = '';
   for (let i = 1; i <= 6; i++) {
@@ -1623,18 +1834,47 @@ function renderReviewCard(card) {
   }
 }
 
-function reviewSelectOption(btnEl, chosenKana, card) {
+// MC renderer for word cards (english→word direction)
+function renderWordMC(card, containerEl, onSelect) {
+  containerEl.innerHTML = '';
+  // Pool: all learned words except the correct one
+  const learnedWordPool = state.cards
+    .filter(c => c.type === 'word' && c.direction === 'word→english' && c.word !== card.word)
+    .map(c => ({word: c.word, english: c.english, reading: c.reading}));
+  learnedWordPool.sort(() => Math.random() - 0.5);
+  let distractors = learnedWordPool.slice(0, 3);
+  // Pad with random loanwords if not enough learned words
+  if (distractors.length < 3) {
+    const all = Object.values(LOANWORDS).flat().filter(w => w.word !== card.word && !distractors.some(d => d.word === w.word));
+    all.sort(() => Math.random() - 0.5);
+    while (distractors.length < 3 && all.length) distractors.push(all.shift());
+  }
+  const options = [...distractors, {word: card.word}].sort(() => Math.random() - 0.5);
+  options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-btn word-mc-btn';
+    btn.dataset.word = opt.word;
+    btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${opt.word}`;
+    btn.addEventListener('click', () => onSelect(btn, opt.word));
+    containerEl.appendChild(btn);
+  });
+}
+
+function reviewSelectOption(btnEl, chosen, card) {
   if (reviewAnswered) { nextReviewCard(); return; }
   reviewAnswered = true;
-  const correct = chosenKana === card.kana;
+  const correct = card.type === 'word' ? chosen === card.word : chosen === card.kana;
   document.querySelectorAll('#mc-mode .mc-btn').forEach(b => {
     b.disabled = true;
-    if (b.dataset.kana === card.kana && !correct) b.classList.add('mc-reveal');
+    const correctVal = card.type === 'word' ? card.word : card.kana;
+    const dataVal    = card.type === 'word' ? b.dataset.word : b.dataset.kana;
+    if (dataVal === correctVal && !correct) b.classList.add('mc-reveal');
   });
   btnEl.classList.add(correct ? 'mc-correct' : 'mc-wrong');
   document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
   showReviewFeedback(correct, card);
-  if (correct) speak(card.kana);
+  const speakTarget = card.type === 'word' ? card.word : card.kana;
+  if (correct) speak(speakTarget);
   handleReviewResult(card, correct);
   document.getElementById('mc-next-btn').style.display = 'block';
 }
@@ -1645,15 +1885,18 @@ function checkReviewAnswer() {
   if (!input) return;
   reviewAnswered = true;
   const card = reviewCard;
-  const correct = input === card.romaji;
+  // word→english: accept slash-separated alternatives
+  const correct = card.type === 'word'
+    ? card.english.toLowerCase().split('/').map(s => s.trim()).includes(input)
+    : input === card.romaji;
   document.getElementById('answer').className = correct ? 'correct' : 'wrong';
   document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
   showReviewFeedback(correct, card, input);
+  const speakTarget = card.type === 'word' ? card.word : card.kana;
+  const correctAnswer = card.type === 'word' ? card.english : card.romaji;
   if (correct) {
-    speak(card.kana);
+    speak(speakTarget);
   } else {
-    // On wrong typed answer, reveal the correct romaji below the kana on the card
-    // so the user can't miss what the answer should have been
     const revealId = 'wrong-reveal';
     let reveal = document.getElementById(revealId);
     if (!reveal) {
@@ -1662,8 +1905,8 @@ function checkReviewAnswer() {
       reveal.style.cssText = 'font-family:"IM Fell English",serif;font-size:1.4rem;font-style:italic;color:var(--wrong);margin-top:6px;';
       document.getElementById('card-main').insertAdjacentElement('afterend', reveal);
     }
-    reveal.textContent = card.romaji;
-    speak(card.kana); // play sound on wrong too so they hear it
+    reveal.textContent = correctAnswer;
+    speak(speakTarget);
   }
   handleReviewResult(card, correct);
 }
@@ -1758,8 +2001,9 @@ function showReviewFeedback(correct, card, userInput) {
   el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
   if (correct) {
     el.innerHTML = ['Correct!', 'Nice!', 'Perfect!', '正解！'][Math.floor(Math.random() * 4)];
+  } else if (card.type === 'word') {
+    el.innerHTML = `Not quite &mdash; <strong>${card.word}</strong> is <em>${card.english}</em>`;
   } else {
-    // Clear format: kana — romaji, with a real space on both sides of "is"
     el.innerHTML = `Not quite &mdash; <strong>${card.kana}</strong> is <em>${card.romaji}</em>`;
   }
 }
@@ -1847,17 +2091,22 @@ let learnQuizTotal   = 0;
 let learnQuizCleared = new Set(); // kana|direction — cleared first-time correct
 
 function renderLearnSetup() {
-  const available = getNewChars();
+  const available = getNewItems();
+  const newKana  = getNewChars().length;
+  const newWords = getNewWords().length;
   const label = document.getElementById('learn-available-label');
-  label.textContent = available.length > 0
-    ? `${available.length} new character${available.length!==1?'s':''} available${available.length < learnBatchSize ? ` — session will use all ${available.length}` : ''}`
-    : 'No new characters available — all unlocked groups are learned!';
-
-  // Disable all buttons only if nothing is available at all
+  if (available.length === 0) {
+    label.textContent = 'Nothing new to learn right now.';
+  } else {
+    const parts = [];
+    if (newKana)  parts.push(`${newKana} character${newKana!==1?'s':''}`);
+    if (newWords) parts.push(`${newWords} word${newWords!==1?'s':''}`);
+    const cap = available.length < learnBatchSize ? ` — session will use all ${available.length}` : '';
+    label.textContent = parts.join(' · ') + ' available' + cap;
+  }
   document.querySelectorAll('.batch-btn').forEach(btn => {
     btn.classList.toggle('disabled-opt', available.length === 0);
   });
-
   document.getElementById('start-learn-btn').disabled = available.length === 0;
   showLearnScreen('setup');
 }
@@ -1869,7 +2118,7 @@ function showLearnScreen(name) {
 }
 
 function startLearnSession() {
-  const available = getNewChars();
+  const available = getNewItems(); // kana first, then words
   learnBatch = available.slice(0, Math.min(learnBatchSize, available.length));
   learnIntroIdx = 0;
   showLearnScreen('intro');
@@ -1878,24 +2127,43 @@ function startLearnSession() {
 
 function renderLearnIntroCard() {
   const c = learnBatch[learnIntroIdx];
-  const main = document.getElementById('learn-card-kana');
-  main.className = 'card-main' + (c.kana.length > 1 ? ' combo' : '');
-  main.textContent = c.kana;
-  document.getElementById('learn-card-romaji').textContent = c.romaji;
+  const main   = document.getElementById('learn-card-kana');
+  const romaji = document.getElementById('learn-card-romaji');
+  const eng    = document.getElementById('learn-card-english');
+
+  if (c.itemType === 'word') {
+    main.className   = 'card-main word-card-main';
+    main.textContent = c.word;
+    romaji.textContent = c.reading;
+    if (eng) { eng.textContent = c.english; eng.style.display = 'block'; }
+    setTimeout(() => speak(c.word), 150);
+  } else {
+    main.className   = 'card-main' + (c.kana.length > 1 ? ' combo' : '');
+    main.textContent = c.kana;
+    romaji.textContent = c.romaji;
+    if (eng) { eng.textContent = ''; eng.style.display = 'none'; }
+    setTimeout(() => speak(c.kana), 150);
+  }
+
   document.getElementById('learn-intro-counter').textContent = `${learnIntroIdx+1} / ${learnBatch.length}`;
   document.getElementById('learn-intro-progress').style.width = `${((learnIntroIdx+1)/learnBatch.length)*100}%`;
   document.getElementById('learn-prev-btn').style.visibility = learnIntroIdx > 0 ? 'visible' : 'hidden';
   document.getElementById('learn-next-btn').textContent = learnIntroIdx < learnBatch.length-1 ? 'Next →' : 'Start Quiz →';
-  // Auto-play sound — this is the one place it makes sense
-  setTimeout(() => speak(c.kana), 150);
 }
 
 function startLearnQuiz() {
-  // Build quiz queue: both directions for each char, shuffled
   learnQuizQueue = [];
   learnBatch.forEach(c => {
-    learnQuizQueue.push({kana:c.kana,romaji:c.romaji,group:1,direction:'kana→romaji',level:0,nextReview:0});
-    learnQuizQueue.push({kana:c.kana,romaji:c.romaji,group:1,direction:'romaji→kana',level:0,nextReview:0});
+    if (c.itemType === 'word') {
+      // Word cards: word→english (typed) and english→word (MC)
+      const groupId = c.group || GROUPS.find(g => g.chars && LOANWORDS[g.id]?.some(w => w.word === c.word))?.id || 1;
+      learnQuizQueue.push({type:'word', word:c.word, reading:c.reading, english:c.english, group:groupId, direction:'word→english', level:0, nextReview:0});
+      learnQuizQueue.push({type:'word', word:c.word, reading:c.reading, english:c.english, group:groupId, direction:'english→word', level:0, nextReview:0});
+    } else {
+      const groupId = GROUPS.find(g => g.chars.some(gc => gc.kana === c.kana))?.id || 1;
+      learnQuizQueue.push({type:'kana', kana:c.kana, romaji:c.romaji, group:groupId, direction:'kana→romaji', level:0, nextReview:0});
+      learnQuizQueue.push({type:'kana', kana:c.kana, romaji:c.romaji, group:groupId, direction:'romaji→kana', level:0, nextReview:0});
+    }
   });
   learnQuizQueue.sort(()=>Math.random()-0.5);
   learnQuizTotal   = learnQuizQueue.length;
@@ -1929,7 +2197,27 @@ function nextLearnQuizCard() {
   const main = document.getElementById('quiz-card-main');
   const prompt=document.getElementById('quiz-answer-prompt');
 
-  if (card.direction==='kana→romaji') {
+  if (card.type === 'word') {
+    if (card.direction === 'word→english') {
+      dir.textContent    = 'katakana → english';
+      main.className     = 'card-main word-card-main';
+      main.textContent   = card.word;
+      prompt.textContent = 'type the English meaning';
+      document.getElementById('quiz-type-mode').style.display  = 'flex';
+      document.getElementById('quiz-mc-mode').style.display    = 'none';
+      document.getElementById('quiz-sound-btn').style.visibility = 'hidden';
+      document.getElementById('quiz-answer').focus();
+    } else {
+      dir.textContent    = 'english → katakana';
+      main.className     = 'card-main romaji-prompt';
+      main.textContent   = card.english;
+      prompt.textContent = 'choose the katakana word';
+      document.getElementById('quiz-type-mode').style.display  = 'none';
+      document.getElementById('quiz-mc-mode').style.display    = 'grid';
+      document.getElementById('quiz-sound-btn').style.visibility = 'visible';
+      renderMCForQuiz(card);
+    }
+  } else if (card.direction==='kana→romaji') {
     dir.textContent  = 'katakana → romaji';
     main.className   = 'card-main'+(card.kana.length>1?' combo':'');
     main.textContent = card.kana;
@@ -1946,121 +2234,163 @@ function nextLearnQuizCard() {
     document.getElementById('quiz-type-mode').style.display='none';
     document.getElementById('quiz-mc-mode').style.display='grid';
     document.getElementById('quiz-sound-btn').style.visibility='visible';
-    // Distractor pool = only this batch (makes it harder/fairer)
     renderMCForQuiz(card);
   }
 }
 
 function renderMCForQuiz(card) {
   const container = document.getElementById('quiz-mc-mode');
-  container.innerHTML='';
-  const batchPool = learnBatch.map(c=>({kana:c.kana,romaji:c.romaji}));
-  const distractors = getDistractors(card, batchPool.length >= 4 ? batchPool : ALL_CHARS);
-  const options = [...distractors,{kana:card.kana,romaji:card.romaji}].sort(()=>Math.random()-0.5);
-  options.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'mc-btn' + (opt.kana.length > 1 ? ' combo-opt' : '');
-    btn.dataset.kana = opt.kana;
-    btn.dataset.mcIndex = i + 1;
-    btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${opt.kana}`;
-    btn.addEventListener('click', () => quizSelectOption(btn, opt.kana));
-    container.appendChild(btn);
-  });
+  container.innerHTML = '';
+
+  if (card.type === 'word') {
+    // english→word: show katakana word options from the batch
+    const wordPool = learnBatch.filter(w => w.itemType === 'word' && w.word !== card.word);
+    wordPool.sort(() => Math.random() - 0.5);
+    const distractorWords = wordPool.slice(0, 3);
+    // Pad with random loanwords if batch is small
+    if (distractorWords.length < 3) {
+      const allWords = Object.values(LOANWORDS).flat().filter(w => w.word !== card.word && !distractorWords.some(d => d.word === w.word));
+      allWords.sort(() => Math.random() - 0.5);
+      while (distractorWords.length < 3 && allWords.length) distractorWords.push(allWords.shift());
+    }
+    const options = [...distractorWords, {word: card.word}].sort(() => Math.random() - 0.5);
+    options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'mc-btn word-mc-btn';
+      btn.dataset.word = opt.word;
+      btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${opt.word}`;
+      btn.addEventListener('click', () => quizSelectOption(btn, opt.word));
+      container.appendChild(btn);
+    });
+  } else {
+    const batchPool = learnBatch.filter(c => c.itemType !== 'word').map(c => ({kana:c.kana, romaji:c.romaji}));
+    const distractors = getDistractors(card, batchPool.length >= 4 ? batchPool : ALL_CHARS);
+    const options = [...distractors, {kana:card.kana, romaji:card.romaji}].sort(() => Math.random() - 0.5);
+    options.forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'mc-btn' + (opt.kana.length > 1 ? ' combo-opt' : '');
+      btn.dataset.kana = opt.kana;
+      btn.dataset.mcIndex = i + 1;
+      btn.innerHTML = `<span class="mc-key-hint">${i + 1}</span>${opt.kana}`;
+      btn.addEventListener('click', () => quizSelectOption(btn, opt.kana));
+      container.appendChild(btn);
+    });
+  }
 }
 
-function quizSelectOption(btnEl, chosenKana) {
+function quizSelectOption(btnEl, chosen) {
   if (learnQuizAnswered) { nextLearnQuizCard(); return; }
-  learnQuizAnswered=true;
-  const card=learnQuizCard;
-  const correct=chosenKana===card.kana;
-  const id=card.kana+'|'+card.direction;
+  learnQuizAnswered = true;
+  const card = learnQuizCard;
+  const correct = card.type === 'word'
+    ? chosen === card.word
+    : chosen === card.kana;
+  const id = (card.type === 'word' ? card.word : card.kana) + '|' + card.direction;
 
   document.querySelectorAll('#quiz-mc-mode .mc-btn').forEach(b => {
-    b.disabled=true;
-    if (b.dataset.kana===card.kana && !correct) b.classList.add('mc-reveal');
+    b.disabled = true;
+    const correctVal = card.type === 'word' ? card.word : card.kana;
+    const dataVal    = card.type === 'word' ? b.dataset.word : b.dataset.kana;
+    if (dataVal === correctVal && !correct) b.classList.add('mc-reveal');
   });
-  btnEl.classList.add(correct?'mc-correct':'mc-wrong');
-  document.getElementById('quiz-flashcard').className='card '+(correct?'correct-flash':'wrong-flash');
-  showQuizFeedback(correct,card);
-  if (correct) speak(card.kana);
+  btnEl.classList.add(correct ? 'mc-correct' : 'mc-wrong');
+  document.getElementById('quiz-flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
+  showQuizFeedback(correct, card);
+  if (correct) speak(card.type === 'word' ? card.word : card.kana);
 
   if (correct && !learnQuizCleared.has(id)) learnQuizCorrect++;
   handleQuizResult(card, correct);
-  document.getElementById('quiz-submit-btn').textContent='NEXT →';
-  document.getElementById('quiz-mc-next-btn').style.display='block';
+  document.getElementById('quiz-submit-btn').textContent = 'NEXT →';
+  document.getElementById('quiz-mc-next-btn').style.display = 'block';
 }
 
 function checkQuizAnswer() {
   if (learnQuizAnswered) { nextLearnQuizCard(); return; }
-  const input=document.getElementById('quiz-answer').value.trim().toLowerCase();
+  const input = document.getElementById('quiz-answer').value.trim().toLowerCase();
   if (!input) return;
-  learnQuizAnswered=true;
-  const card=learnQuizCard;
-  const correct=input===card.romaji;
-  const id=card.kana+'|'+card.direction;
+  learnQuizAnswered = true;
+  const card = learnQuizCard;
+  // word→english: accept any reasonable match (lowercase)
+  const correct = card.type === 'word'
+    ? input === card.english.toLowerCase() || card.english.toLowerCase().split('/').map(s=>s.trim()).includes(input)
+    : input === card.romaji;
+  const id = (card.type === 'word' ? card.word : card.kana) + '|' + card.direction;
 
-  document.getElementById('quiz-answer').className=correct?'correct':'wrong';
-  document.getElementById('quiz-flashcard').className='card '+(correct?'correct-flash':'wrong-flash');
-  showQuizFeedback(correct,card);
-  if (correct) speak(card.kana);
+  document.getElementById('quiz-answer').className = correct ? 'correct' : 'wrong';
+  document.getElementById('quiz-flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
+  showQuizFeedback(correct, card);
+  if (correct) speak(card.type === 'word' ? card.word : card.kana);
 
   if (correct && !learnQuizCleared.has(id)) learnQuizCorrect++;
   handleQuizResult(card, correct);
-  document.getElementById('quiz-submit-btn').textContent='NEXT →';
+  document.getElementById('quiz-submit-btn').textContent = 'NEXT →';
 }
 
 function handleQuizResult(card, correct) {
-  const id = card.kana+'|'+card.direction;
+  const id = (card.type === 'word' ? card.word : card.kana) + '|' + card.direction;
   if (correct) {
     learnQuizCleared.add(id);
-    // Remove any duplicate of this card still in queue
-    learnQuizQueue = learnQuizQueue.filter(c => (c.kana+'|'+c.direction) !== id);
+    learnQuizQueue = learnQuizQueue.filter(c => {
+      const cid = (c.type === 'word' ? c.word : c.kana) + '|' + c.direction;
+      return cid !== id;
+    });
   } else {
-    // Re-insert 2–3 cards later
     const offset = 2 + Math.floor(Math.random() * 2);
     const idx = Math.min(offset, learnQuizQueue.length);
     learnQuizQueue.splice(idx, 0, card);
   }
-  // Update progress bar based on cleared count
   const pct = (learnQuizCleared.size / learnQuizTotal) * 100;
   document.getElementById('learn-quiz-progress').style.width = pct + '%';
   document.getElementById('quiz-q-num').textContent   = learnQuizCleared.size;
   document.getElementById('quiz-q-total').textContent = learnQuizTotal;
 }
 
-function showQuizFeedback(correct,card) {
-  const el=document.getElementById('quiz-feedback');
-  el.className='feedback '+(correct?'correct':'wrong');
-  el.innerHTML=correct
-    ? ['Correct!','Nice!','Perfect!','正解！'][Math.floor(Math.random()*4)]
-    : `Not quite — <strong>${card.romaji}</strong> is <strong>${card.kana}</strong>`;
+function showQuizFeedback(correct, card) {
+  const el = document.getElementById('quiz-feedback');
+  el.className = 'feedback ' + (correct ? 'correct' : 'wrong');
+  if (correct) {
+    el.innerHTML = ['Correct!','Nice!','Perfect!','正解！'][Math.floor(Math.random()*4)];
+  } else if (card.type === 'word') {
+    el.innerHTML = `Not quite &mdash; <strong>${card.word}</strong> is <em>${card.english}</em>`;
+  } else {
+    el.innerHTML = `Not quite &mdash; <strong>${card.kana}</strong> is <em>${card.romaji}</em>`;
+  }
 }
 function hideQuizFeedback() {
-  const el=document.getElementById('quiz-feedback');
-  el.className='feedback hidden'; el.innerHTML='';
-  document.getElementById('quiz-submit-btn').textContent='CHECK';
+  const el = document.getElementById('quiz-feedback');
+  el.className = 'feedback hidden'; el.innerHTML = '';
+  document.getElementById('quiz-submit-btn').textContent = 'CHECK';
 }
 
 function showLearnResults() {
-  // Commit chars to SRS regardless of quiz performance
-  commitLearnedBatch(learnBatch);
+  // Separate kana and words from the batch
+  const kanaItems = learnBatch.filter(c => c.itemType !== 'word');
+  const wordItems = learnBatch.filter(c => c.itemType === 'word');
+
+  if (kanaItems.length) commitLearnedBatch(kanaItems);
+  if (wordItems.length) commitLearnedWords(wordItems);
   updateHeaderStats(); updateGroups(); renderScheduleChart();
 
-  // Encouraging messages — no scores, no percentages
   const messages = [
-    'These characters are yours now.',
-    'A fine session. The kana remember you.',
-    'Well done. Keep coming back.',
-    'Each character is a step forward.',
+    'These are yours now.',
+    'A fine session. Keep coming back.',
+    'Well done. The path continues.',
+    'Each lesson is a step forward.',
   ];
   const msg = messages[Math.floor(Math.random() * messages.length)];
 
-  document.getElementById('results-chars').textContent = learnBatch.map(c => c.kana).join('　');
+  const kanaDisplay = kanaItems.map(c => c.kana).join('　');
+  const wordDisplay = wordItems.map(c => c.word).join('　');
+  document.getElementById('results-chars').textContent = [kanaDisplay, wordDisplay].filter(Boolean).join('　');
   document.getElementById('results-title').textContent = 'Lesson complete';
-  document.getElementById('results-sub').textContent =
-    `${learnBatch.length} new character${learnBatch.length !== 1 ? 's' : ''} added to your review queue. ${msg}`;
 
-  const moreAvailable = getNewChars().length > 0;
+  const parts = [];
+  if (kanaItems.length) parts.push(`${kanaItems.length} character${kanaItems.length!==1?'s':''}`);
+  if (wordItems.length) parts.push(`${wordItems.length} word${wordItems.length!==1?'s':''}`);
+  document.getElementById('results-sub').textContent =
+    `${parts.join(' and ')} added to your review queue. ${msg}`;
+
+  const moreAvailable = getNewItems().length > 0;
   document.getElementById('results-learn-more-btn').style.display = moreAvailable ? 'inline-block' : 'none';
 
   showLearnScreen('results');
@@ -2070,39 +2400,74 @@ function showLearnResults() {
 //  STUDY REF VIEW
 // ─────────────────────────────────────────────
 let showAllRef = false;
+let studyRefMode = 'kana'; // 'kana' | 'words'
+
 function renderStudyRef() {
-  const content = document.getElementById('ref-content');
+  const content    = document.getElementById('ref-content');
   const showAllBtn = document.getElementById('show-all-btn');
   showAllBtn.classList.toggle('active', showAllRef);
   showAllBtn.textContent = showAllRef ? 'Show learned' : 'Show all';
-  content.innerHTML='';
+  document.getElementById('ref-kana-btn').classList.toggle('active', studyRefMode === 'kana');
+  document.getElementById('ref-words-btn').classList.toggle('active', studyRefMode === 'words');
+  content.innerHTML = '';
 
-  GROUPS.forEach(group => {
-    const hasAnyLearned = group.chars.some(c => state.learnedKana.includes(c.kana));
-    if (!hasAnyLearned && !showAllRef) return; // skip groups with nothing learned
-
-    const section = document.createElement('div');
-    section.className = 'ref-group';
-    section.innerHTML = `<div class="ref-group-title" style="--group-color:${group.color}"><span>●</span> ${group.label}</div>`;
-    const grid = document.createElement('div');
-    grid.className = 'ref-chars-grid';
-
-    group.chars.forEach(c => {
-      const learned = state.learnedKana.includes(c.kana);
-      if (!learned && !showAllRef) return;
-      const card = document.createElement('div');
-      card.className = 'ref-char-card' + (learned ? '' : ' not-learned');
-      card.innerHTML = `<div class="ref-kana">${c.kana}</div><div class="ref-romaji">${c.romaji}</div>`;
-      card.addEventListener('click', () => speak(c.kana));
-      grid.appendChild(card);
+  if (studyRefMode === 'kana') {
+    GROUPS.forEach(group => {
+      const hasAnyLearned = group.chars.some(c => state.learnedKana.includes(c.kana));
+      if (!hasAnyLearned && !showAllRef) return;
+      const section = document.createElement('div');
+      section.className = 'ref-group';
+      section.innerHTML = `<div class="ref-group-title" style="--group-color:${group.color}"><span>●</span> ${group.label}</div>`;
+      const grid = document.createElement('div');
+      grid.className = 'ref-chars-grid';
+      group.chars.forEach(c => {
+        const learned = state.learnedKana.includes(c.kana);
+        if (!learned && !showAllRef) return;
+        const card = document.createElement('div');
+        card.className = 'ref-char-card' + (learned ? '' : ' not-learned');
+        card.innerHTML = `<div class="ref-kana">${c.kana}</div><div class="ref-romaji">${c.romaji}</div>`;
+        card.addEventListener('click', () => speak(c.kana));
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+      content.appendChild(section);
     });
-
-    section.appendChild(grid);
-    content.appendChild(section);
-  });
+  } else {
+    GROUPS.forEach(group => {
+      const words = LOANWORDS[group.id];
+      if (!words) return;
+      const hasUnlocked = state.unlockedWordGroups.includes(group.id);
+      if (!hasUnlocked && !showAllRef) return;
+      const section = document.createElement('div');
+      section.className = 'ref-group';
+      const wordCount = state.learnedWords.filter(w => words.some(lw => lw.word === w)).length;
+      section.innerHTML = `<div class="ref-group-title" style="--group-color:${group.color}"><span>●</span> ${group.label} <span style="color:var(--muted);font-size:0.85em">(${wordCount}/${words.length})</span></div>`;
+      const grid = document.createElement('div');
+      grid.className = 'ref-chars-grid words-grid';
+      words.forEach(w => {
+        const learned = state.learnedWords.includes(w.word);
+        if (!learned && !showAllRef) return;
+        const card = document.createElement('div');
+        card.className = 'ref-word-card' + (learned ? '' : ' not-learned');
+        card.innerHTML = `
+          <div class="ref-word-kana">${w.word}</div>
+          <div class="ref-word-english">${w.english}</div>
+          <div class="ref-word-reading">${w.reading}</div>
+        `;
+        card.addEventListener('click', () => speak(w.word));
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+      content.appendChild(section);
+    });
+  }
 
   if (!content.children.length) {
-    content.innerHTML = '<div class="empty-state visible"><div class="empty-kana">カ</div><div class="empty-title">Nothing learned yet</div><div class="empty-sub">Complete a Learn session first.</div></div>';
+    const msg = studyRefMode === 'words'
+      ? "No words unlocked yet — reach Level 4 on 70% of a group's cards first."
+      : 'Complete a Learn session first.';
+    const icon = studyRefMode === 'words' ? 'コーヒー' : 'カ';
+    content.innerHTML = `<div class="empty-state visible"><div class="empty-kana">${icon}</div><div class="empty-title">Nothing here yet</div><div class="empty-sub">${msg}</div></div>`;
   }
 }
 
@@ -2117,7 +2482,8 @@ function formatDuration(ms) {
 function updateDueCount() { document.getElementById('due-count').textContent=getDueCards().length; }
 function updateHeaderStats() {
   document.getElementById('total-reviews').textContent = getDueCards().length;
-  document.getElementById('learned-count').textContent = state.learnedKana.length;
+  const total = state.learnedKana.length + state.learnedWords.length;
+  document.getElementById('learned-count').textContent = total;
 }
 function groupProgress(groupId) {
   const cards=state.cards.filter(c=>c.group===groupId&&c.direction==='kana→romaji');
@@ -2486,26 +2852,48 @@ function initDevPanel() {
   const row = document.getElementById('dev-unlock-row');
   row.innerHTML = '';
   GROUPS.forEach(g => {
+    // Kana unlock button
     const btn = document.createElement('button');
     btn.className = 'dev-btn';
-    btn.textContent = `Unlock G${g.id}`;
+    btn.textContent = `Kana G${g.id}`;
     btn.addEventListener('click', () => {
-      if (!state.unlockedGroups.includes(g.id)) {
-        unlockGroup(g.id);
-        // Also add all chars as learned
-        g.chars.forEach(c => {
-          if (!state.learnedKana.includes(c.kana)) {
-            state.learnedKana.push(c.kana);
-            state.cards.push({kana:c.kana,romaji:c.romaji,group:g.id,direction:'kana→romaji',level:1,nextReview:Date.now()});
-            state.cards.push({kana:c.kana,romaji:c.romaji,group:g.id,direction:'romaji→kana',level:1,nextReview:Date.now()+60000});
+      if (!state.unlockedGroups.includes(g.id)) unlockGroup(g.id);
+      g.chars.forEach(c => {
+        if (!state.learnedKana.includes(c.kana)) {
+          state.learnedKana.push(c.kana);
+          state.cards.push({type:'kana',kana:c.kana,romaji:c.romaji,group:g.id,direction:'kana→romaji',level:4,nextReview:Date.now()});
+          state.cards.push({type:'kana',kana:c.kana,romaji:c.romaji,group:g.id,direction:'romaji→kana',level:4,nextReview:Date.now()+60000});
+        }
+      });
+      saveState();
+      checkWordUnlocks();
+      updateGroups(); updateHeaderStats(); updateDueCount(); renderScheduleChart();
+      showToast(`Group ${g.id} kana unlocked (L4)`, 'var(--accent)');
+    });
+    row.appendChild(btn);
+
+    // Word unlock button (only if words exist for this group)
+    if (LOANWORDS[g.id]) {
+      const wBtn = document.createElement('button');
+      wBtn.className = 'dev-btn';
+      wBtn.textContent = `Words G${g.id}`;
+      wBtn.addEventListener('click', () => {
+        if (!state.unlockedWordGroups.includes(g.id)) {
+          state.unlockedWordGroups.push(g.id);
+        }
+        LOANWORDS[g.id].forEach(w => {
+          if (!state.learnedWords.includes(w.word)) {
+            state.learnedWords.push(w.word);
+            state.cards.push({type:'word',word:w.word,reading:w.reading,english:w.english,group:g.id,direction:'word→english',level:1,nextReview:Date.now()});
+            state.cards.push({type:'word',word:w.word,reading:w.reading,english:w.english,group:g.id,direction:'english→word',level:1,nextReview:Date.now()+60000});
           }
         });
         saveState();
         updateGroups(); updateHeaderStats(); updateDueCount(); renderScheduleChart();
-        showToast(`Group ${g.id} unlocked in dev mode`, 'var(--accent)');
-      }
-    });
-    row.appendChild(btn);
+        showToast(`Group ${g.id} words unlocked`, 'var(--correct)');
+      });
+      row.appendChild(wBtn);
+    }
   });
 }
 
@@ -2569,8 +2957,12 @@ document.getElementById('submit-btn').addEventListener('click',()=>{
   else checkReviewAnswer();
 });
 document.getElementById('answer').addEventListener('keydown',e=>{if(e.key==='Enter')checkReviewAnswer();});
-document.getElementById('card-main').addEventListener('click',()=>{if(reviewCard)speak(reviewCard.kana);});
-document.getElementById('sound-btn').addEventListener('click',()=>{if(reviewCard)speak(reviewCard.kana);});
+document.getElementById('card-main').addEventListener('click',()=>{
+  if(reviewCard) speak(reviewCard.type==='word' ? reviewCard.word : reviewCard.kana);
+});
+document.getElementById('sound-btn').addEventListener('click',()=>{
+  if(reviewCard) speak(reviewCard.type==='word' ? reviewCard.word : reviewCard.kana);
+});
 document.getElementById('goto-learn-btn').addEventListener('click',()=>switchView('learn'));
 document.getElementById('mc-next-btn').addEventListener('click', nextReviewCard);
 document.getElementById('quiz-mc-next-btn').addEventListener('click', nextLearnQuizCard);
@@ -2673,13 +3065,19 @@ document.addEventListener('keydown', e => {
   if (num >= 1 && num <= 4) {
     if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
 
-    if (currentView === 'review' && reviewCard?.direction === 'romaji→kana' && !reviewAnswered) {
-      const btns = document.querySelectorAll('#mc-mode .mc-btn:not(:disabled)');
-      if (btns[num - 1]) btns[num - 1].click();
+    if (currentView === 'review' && !reviewAnswered) {
+      const isMC = reviewCard?.direction === 'romaji→kana' || reviewCard?.direction === 'english→word';
+      if (isMC) {
+        const btns = document.querySelectorAll('#mc-mode .mc-btn:not(:disabled)');
+        if (btns[num - 1]) btns[num - 1].click();
+      }
     }
-    if (currentView === 'learn' && learnQuizCard?.direction === 'romaji→kana' && !learnQuizAnswered) {
-      const btns = document.querySelectorAll('#quiz-mc-mode .mc-btn:not(:disabled)');
-      if (btns[num - 1]) btns[num - 1].click();
+    if (currentView === 'learn' && !learnQuizAnswered) {
+      const isMC = learnQuizCard?.direction === 'romaji→kana' || learnQuizCard?.direction === 'english→word';
+      if (isMC) {
+        const btns = document.querySelectorAll('#quiz-mc-mode .mc-btn:not(:disabled)');
+        if (btns[num - 1]) btns[num - 1].click();
+      }
     }
     if (currentView === 'confusables' && !confuseAnswered) {
       const btns = document.querySelectorAll('#confuse-mc .mc-btn:not(:disabled)');
@@ -2695,9 +3093,15 @@ document.getElementById('results-to-review-btn').addEventListener('click',()=>{
 });
 document.getElementById('results-learn-more-btn').addEventListener('click',()=>renderLearnSetup());
 
-// Study ref toggle
+// Study ref toggles
 document.getElementById('show-all-btn').addEventListener('click',()=>{
   showAllRef=!showAllRef; renderStudyRef();
+});
+document.getElementById('ref-kana-btn').addEventListener('click',()=>{
+  studyRefMode='kana'; renderStudyRef();
+});
+document.getElementById('ref-words-btn').addEventListener('click',()=>{
+  studyRefMode='words'; renderStudyRef();
 });
 
 // ─────────────────────────────────────────────
