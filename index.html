@@ -618,7 +618,7 @@
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 24px;
+    padding: 28px 24px;
     display: none;
     flex-direction: column;
     align-items: center;
@@ -630,8 +630,27 @@
   .summary-pct { font-family:'IM Fell English',serif; font-size:3.5rem; color:var(--correct); line-height:1; }
   .summary-pct.mid { color:var(--gold); }
   .summary-pct.low { color:var(--wrong); }
-  .summary-label { font-family:'IM Fell English',serif; font-size:1rem; font-style:italic; color:var(--text2); }
-  .summary-detail { font-size:0.75rem; color:var(--muted); }
+  .summary-label { font-family:'IM Fell English',serif; font-size:1.1rem; font-style:italic; color:var(--text2); }
+  .summary-detail { font-size:0.78rem; color:var(--muted); }
+  .summary-wrong-section { width:100%; border-top:1px solid var(--border); padding-top:14px; }
+  .summary-wrong-title { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.68rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .wrong-chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+  .wrong-chip {
+    background: var(--wrong-bg);
+    border: 1px solid var(--wrong);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    opacity: 0.85;
+  }
+  .wrong-chip:hover { transform: translateY(-2px); box-shadow: 0 3px 8px var(--shadow); opacity: 1; }
+  .wrong-chip-kana { font-family:'Noto Sans JP',sans-serif; font-size:1.4rem; font-weight:300; color:var(--text); }
+  .wrong-chip-romaji { font-family:'IM Fell English',serif; font-size:0.72rem; font-style:italic; color:var(--wrong); }
   .study-ref-controls { display:flex; justify-content:space-between; align-items:center; }
   .study-ref-title { font-family:'IM Fell English',serif; font-size:1rem; color:var(--text2); }
   .show-all-btn { font-family:'Zen Kaku Gothic New',sans-serif; font-size:0.68rem; color:var(--muted); background:transparent; border:1px solid var(--border); border-radius:6px; padding:4px 10px; cursor:pointer; transition:color 0.15s,border-color 0.15s; }
@@ -898,6 +917,10 @@
       <div class="summary-pct" id="summary-pct">—</div>
       <div class="summary-label" id="summary-label">Session complete</div>
       <div class="summary-detail" id="summary-detail"></div>
+      <div class="summary-wrong-section">
+        <div class="summary-wrong-title">Review these</div>
+        <div class="wrong-chips" id="summary-wrong-list"></div>
+      </div>
       <button class="goto-learn-btn" id="summary-review-btn" style="margin-top:4px">Back to Review</button>
     </div>
 
@@ -1583,9 +1606,16 @@ function getNewItems() {
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang='ja-JP'; u.rate=0.85;
-  window.speechSynthesis.speak(u);
+  // Small delay after cancel — prevents the browser cutting off the utterance
+  // Rate slows for longer words (loanwords) so they don't get clipped
+  const rate = text.length > 2 ? 0.75 : 0.85;
+  setTimeout(() => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ja-JP';
+    u.rate = rate;
+    u.pitch = 1.0;
+    window.speechSynthesis.speak(u);
+  }, 80);
 }
 
 // ─────────────────────────────────────────────
@@ -1659,8 +1689,9 @@ let sessionSnapshot  = {};      // cardId → level before session started
 let sessionCleared   = new Set(); // cardIds correctly answered this session (first-time)
 let sessionTotal     = 0;       // unique cards that entered the queue
 let sessionWrapping  = false;   // true after Wrap Up pressed
-let sessionAttempts  = 0;       // total answer attempts this session
+let sessionAttempts     = 0;    // total answer attempts this session
 let sessionCorrectCount = 0;    // correct answers this session (for accuracy %)
+let sessionWrongCards   = [];   // cards gotten wrong at least once this session (for results screen)
 
 function cardId(card) {
   const key = card.type === 'word' ? card.word : card.kana;
@@ -1680,6 +1711,7 @@ function buildReviewQueue() {
   sessionWrapping      = false;
   sessionAttempts      = 0;
   sessionCorrectCount  = 0;
+  sessionWrongCards    = [];
 
   updateSessionBar();
   const bar = document.getElementById('session-bar');
@@ -1764,6 +1796,9 @@ function handleReviewResult(card, correct) {
     reviewQueue = reviewQueue.filter(c => cardId(c) !== id);
   } else {
     reinsertFailed(card);
+    // Track unique wrong cards for results screen
+    const alreadyTracked = sessionWrongCards.some(c => cardId(c) === id);
+    if (!alreadyTracked) sessionWrongCards.push(card);
   }
 
   // Disable input so user can't change their answer — must press Next
@@ -1874,7 +1909,24 @@ function reviewSelectOption(btnEl, chosen, card) {
   document.getElementById('flashcard').className = 'card ' + (correct ? 'correct-flash' : 'wrong-flash');
   showReviewFeedback(correct, card);
   const speakTarget = card.type === 'word' ? card.word : card.kana;
-  if (correct) speak(speakTarget);
+  speak(speakTarget); // always play sound so they hear the correct answer
+
+  // On wrong MC: also reveal the correct answer on the card face
+  if (!correct) {
+    const revealId = 'wrong-reveal';
+    let reveal = document.getElementById(revealId);
+    if (!reveal) {
+      reveal = document.createElement('div');
+      reveal.id = revealId;
+      reveal.style.cssText = 'font-family:"IM Fell English",serif;font-size:1.3rem;font-style:italic;color:var(--wrong);margin-top:6px;';
+      document.getElementById('card-main').insertAdjacentElement('afterend', reveal);
+    }
+    const correctAnswer = card.type === 'word'
+      ? (card.direction === 'english→word' ? card.word : card.english)
+      : (card.direction === 'romaji→kana'  ? card.kana  : card.romaji);
+    reveal.textContent = correctAnswer;
+  }
+
   handleReviewResult(card, correct);
   document.getElementById('mc-next-btn').style.display = 'block';
 }
@@ -1953,7 +2005,7 @@ function endSession() {
   });
   saveState();
   reviewQueue = []; reviewCard = null;
-  sessionWrapping = false;
+  sessionWrapping = false; sessionWrongCards = [];
   document.getElementById('session-bar').style.display = 'none';
   showReviewEmpty();
   updateHeaderStats(); updateGroups();
@@ -1972,12 +2024,10 @@ function endSessionComplete() {
       pct:     pctVal
     });
     if (state.sessionHistory.length > 20) state.sessionHistory.shift();
-    // Keep old accuracyHistory in sync for backwards compat
     state.accuracyHistory = state.sessionHistory;
     saveState();
   }
 
-  // Show session summary with real accuracy
   const pct = sessionAttempts > 0 ? Math.round((sessionCorrectCount / sessionAttempts) * 100) : 100;
   const pctEl = document.getElementById('summary-pct');
   pctEl.textContent = pct + '%';
@@ -1986,13 +2036,45 @@ function endSessionComplete() {
     pct >= 80 ? 'Excellent session' : pct >= 50 ? 'Good effort' : 'Keep practising';
   document.getElementById('summary-detail').textContent =
     `${sessionCorrectCount} correct out of ${sessionAttempts} attempts · ${sessionCleared.size} of ${sessionTotal} cards cleared`;
-  document.getElementById('session-summary').classList.add('visible');
+
+  // Build wrong cards list
+  const wrongList = document.getElementById('summary-wrong-list');
+  if (wrongList) {
+    wrongList.innerHTML = '';
+    if (sessionWrongCards.length === 0) {
+      wrongList.innerHTML = '<div style="color:var(--correct);font-style:italic;font-size:0.85rem">No mistakes — perfect session!</div>';
+    } else {
+      // Deduplicate by kana/word — only show unique wrong items
+      const seen = new Set();
+      const unique = sessionWrongCards.filter(c => {
+        const k = c.type === 'word' ? c.word : c.kana;
+        if (seen.has(k)) return false;
+        seen.add(k); return true;
+      });
+      unique.forEach(c => {
+        const chip = document.createElement('div');
+        chip.className = 'wrong-chip';
+        if (c.type === 'word') {
+          chip.innerHTML = `<span class="wrong-chip-kana">${c.word}</span><span class="wrong-chip-romaji">${c.english}</span>`;
+        } else {
+          chip.innerHTML = `<span class="wrong-chip-kana">${c.kana}</span><span class="wrong-chip-romaji">${c.romaji}</span>`;
+        }
+        chip.addEventListener('click', () => speak(c.type === 'word' ? c.word : c.kana));
+        wrongList.appendChild(chip);
+      });
+    }
+  }
 
   reviewQueue = []; reviewCard = null;
-  sessionWrapping = false;
+  sessionWrapping = false; sessionWrongCards = [];
   document.getElementById('session-bar').style.display = 'none';
   document.getElementById('review-section').style.display = 'none';
   hideReviewEmpty();
+
+  // Show summary — scroll to top so it's visible
+  document.getElementById('session-summary').classList.add('visible');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+
   updateHeaderStats(); updateGroups(); renderScheduleChart();
 }
 
